@@ -468,19 +468,6 @@
                 }, 1500);
             }
         }
-    // --- SUCCESS ---
-
-    // <--- ADD THESE LINES BEFORE THE REDIRECT --->
-    localStorage.setItem('isLoggedIn', 'true');
-    
-    // If we don't have a name saved, use the email as a backup name
-    if(!localStorage.getItem('userName')) {
-        localStorage.setItem('userName', email.split('@')[0]);
-    }
-    // <--- END ADD --->
-
-    window.location.href = "index.html";
-})
     </script>
 </body>
-</html>
+</html>s
