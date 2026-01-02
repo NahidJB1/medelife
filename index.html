@@ -7,20 +7,64 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+    /* Ensure the navbar items are spaced out properly */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 5%; /* Adds safe space on sides */
+    }
+
+    /* MOBILE VIEW TWEAKS (Screens smaller than 768px) */
+    @media (max-width: 768px) {
+        
+        /* Hide the links because there is no menu button to open them anymore */
+        .nav-links {
+            display: none; 
+        }
+
+        /* Make the Login button smaller on mobile so it fits next to the logo */
+        .btn-login {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+        }
+
+        /* Prevent the new logo from being too big on mobile */
+        .logo-container svg {
+            width: 30px;
+            height: 30px;
+        }
+        .logo-container div {
+            font-size: 18px !important; /* Force text to be smaller */
+        }
+    }
+</style>
+
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo">MEDe<span class="highlight">LIFE</span></div>
-        <ul class="nav-links">
-            <li><a href="#" class="active">Home</a></li>
-            <li><a href="blog.html">Q&A Community</a></li> <li><a href="#features">Features</a></li>
-            <li><button class="btn-login" onclick="openLoginModal()">Login / Register</button></li>
-        </ul>
-        <div class="hamburger">
-            <i class="fas fa-bars"></i>
+<nav class="navbar">
+    <a href="#" class="logo-container" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+        <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="35" y="10" width="30" height="80" rx="5" fill="#EF4444" />
+            <rect x="10" y="35" width="80" height="30" rx="5" fill="#EF4444" />
+        </svg>
+        <div style="font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; line-height: 1;">
+            <span style="color: #EF4444;">MED</span><span style="color: #000;">e</span><span style="color: #22C55E;">LIFE</span>
         </div>
-    </nav>
+    </a>
+    <ul class="nav-links">
+        <li><a href="#" class="active">Home</a></li>
+        <li><a href="blog.html">Q&A Community</a></li> 
+        <li><a href="#features">Features</a></li>
+    </ul>
+
+    <button class="btn-login" onclick="window.location.href='login.html'">Login / Register</button>
+</nav>
+
+
 
     <header class="hero">
         <div class="hero-content">
@@ -28,7 +72,7 @@
             <p>Securely store prescriptions, lab reports, and doctor's notes. Accessible by you, your doctor, and your pharmacist anywhere, anytime.</p>
             <div class="cta-buttons">
                 <button class="btn-primary" onclick="window.location.href='blog.html'">Browse Q&A Topics</button>
-                <button class="btn-secondary" onclick="openLoginModal()">Access My Records</button>
+                <button class="btn-secondary" onclick="window.location.href='login.html'">Access My Records</button>
             </div>
         </div>
         <div class="hero-image">
