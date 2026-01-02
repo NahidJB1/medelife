@@ -424,7 +424,7 @@
         }
         function clearError(inputElement) { inputElement.style.borderColor = "transparent"; document.getElementById('emailErrorMsg').style.display = 'none'; }
         
-        // --- LOGIN HANDLER ---
+        // --- LOGIN HANDLER (FIXED) ---
         function handleLogin(event) {
             event.preventDefault();
             const btn = document.getElementById('btnSignIn');
@@ -438,6 +438,36 @@
             if (typeof firebase !== 'undefined') {
                 firebase.auth().signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
+                    // --- SUCCESS ---
+                    
+                    // 1. Save Login State
+                    localStorage.setItem('isLoggedIn', 'true');
+                    
+                    // 2. Save Name (Backup if missing)
+                    if(!localStorage.getItem('userName')) {
+                        localStorage.setItem('userName', email.split('@')[0]);
+                    }
+
+                    // 3. Redirect
+                    window.location.href = "index.html";
+                })
+                .catch((error) => {
+                    // --- ERROR HANDLING ---
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    alert("Login Failed: " + error.message);
+                });
+            } else {
+                // --- DEMO FALLBACK (No Firebase) ---
+                setTimeout(() => { 
+                    localStorage.setItem('isLoggedIn', 'true');
+                    if(!localStorage.getItem('userName')) {
+                        localStorage.setItem('userName', email.split('@')[0]);
+                    }
+                    window.location.href = "index.html"; 
+                }, 1500);
+            }
+        }
     // --- SUCCESS ---
 
     // <--- ADD THESE LINES BEFORE THE REDIRECT --->
