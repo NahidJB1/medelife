@@ -340,8 +340,15 @@
             if (typeof firebase !== 'undefined') {
                 firebase.auth().createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
                 .then((userCredential) => {
-                    // --- SUCCESS ---
-                    showSuccessAnimation();
+        // --- SUCCESS ---
+        
+        // <--- ADD THESE 3 LINES HERE --->
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userName', document.getElementById('regName').value);
+        localStorage.setItem('userRole', document.getElementById('regRole').value);
+        // <--- END ADD --->
+
+        showSuccessAnimation();
                     // Optional: Save other user details to Firestore here
                 })
                 .catch((error) => {
@@ -431,21 +438,19 @@
             if (typeof firebase !== 'undefined') {
                 firebase.auth().signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
+    // --- SUCCESS ---
 
-                    // Success -> Redirect to dashboard (or index for now)
-                    window.location.href = "index.html";
-                    localStorage.setItem('isLoggedIn', 'true');
-                })
-                .catch((error) => {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    alert("Login Failed: " + error.message);
-                });
-            } else {
-                // Demo fallback
-                setTimeout(() => { window.location.href = "index.html"; }, 1500);
-            }
-        }
+    // <--- ADD THESE LINES BEFORE THE REDIRECT --->
+    localStorage.setItem('isLoggedIn', 'true');
+    
+    // If we don't have a name saved, use the email as a backup name
+    if(!localStorage.getItem('userName')) {
+        localStorage.setItem('userName', email.split('@')[0]);
+    }
+    // <--- END ADD --->
+
+    window.location.href = "index.html";
+})
     </script>
 </body>
 </html>
