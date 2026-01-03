@@ -761,7 +761,7 @@
         // Fetch History from Database
         db.collection('prescriptions')
             .where('patientId', '==', patientId)
-            .orderBy('timestamp', 'desc')
+            //.orderBy('timestamp', 'desc')
             .get()
             .then(snap => {
                 const hist = document.getElementById('rxHistory');
