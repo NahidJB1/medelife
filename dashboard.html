@@ -199,6 +199,7 @@
         .search-input-field {
             flex: 1; border: none; padding: 15px;
             font-size: 1rem; border-radius: 50px; outline: none;
+            background: transparent; /* FIXED: Transparent background to avoid pill-in-pill look */
         }
         .search-btn-modern {
             background: var(--dark); color: white; border: none;
@@ -496,7 +497,7 @@
                 fileData: base64String,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                alert("Report Uploaded Successfully!");
+                // FIXED: Removed success alert as requested
                 closeModal();
             }).catch(err => {
                 alert("Error: " + err.message);
@@ -634,7 +635,7 @@
                 status: 'pending',
                 requestDate: new Date().toISOString()
             }).then(() => {
-                alert("Appointment Requested!");
+                // FIXED: Removed success alert as requested
                 loadDoctors(); 
             });
         }
@@ -644,7 +645,7 @@
         if(confirm("Are you sure you want to cancel this request?")) {
             db.collection('appointments').doc(aptId).delete()
             .then(() => {
-                alert("Appointment Cancelled.");
+                // FIXED: Removed success alert as requested
                 loadDoctors(); 
             });
         }
@@ -730,7 +731,7 @@
             
             <div class="modern-search-bar">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name...">
+                <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name..." autocomplete="off">
                 <button class="search-btn-modern" onclick="performSearch()">Search</button>
             </div>
 
@@ -890,7 +891,7 @@
             doctorName: currentUserData.name,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            alert("Prescription Added");
+            // FIXED: Removed success alert as requested
             loadPatientPrescriptions(patientId, patientName);
         });
     }
@@ -976,4 +977,4 @@
     }
     </script>
 </body>
-</html>   
+</html>
