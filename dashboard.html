@@ -316,18 +316,20 @@
             <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
         `;
 
+        // CHANGED: Clicking this now opens only PENDING requests
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card" onclick="openAppointmentList()">
+            <div class="stat-card" onclick="openAppointmentList('pending')">
                 <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
-                <div class="stat-info"><h3>Check</h3><p>Appointments</p></div>
+                <div class="stat-info"><h3>Check</h3><p>Requests</p></div>
             </div>
         `;
 
+        // CHANGED: Added specific 'accepted' filter to View Bookings
         document.getElementById('actionGrid').innerHTML = `
-            <div class="action-card" onclick="openAppointmentList()">
+            <div class="action-card" onclick="openAppointmentList('accepted')">
                 <i class="fas fa-clipboard-list"></i>
                 <h4>View Bookings</h4>
-                <p>Accept or Decline</p>
+                <p>Confirmed Patients</p>
             </div>
             <div class="action-card" onclick="openPatientSearch()">
                 <i class="fas fa-user-injured"></i>
@@ -570,8 +572,11 @@
     }
 
     // --- D. DOCTOR: APPOINTMENTS ---
-    function openAppointmentList() {
-        modalContent.innerHTML = `<h2>Incoming Appointments</h2><div id="aptList">Loading...</div>`;
+    // --- D. DOCTOR: APPOINTMENTS (SPLIT LISTS) ---
+    function openAppointmentList(filterType) {
+        // Set title based on what button was clicked
+        const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
+        modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
         modal.classList.add('active');
 
         db.collection('appointments')
@@ -581,38 +586,72 @@
                 const list = document.getElementById('aptList');
                 list.innerHTML = '';
                 
-                // Filter locally for pending
-                let hasPending = false;
+                let count = 0;
+                
                 snap.forEach(doc => {
                     const data = doc.data();
-                    if(data.status !== 'pending') return; 
-                    hasPending = true;
+                    
+                    // Filter: Only show items matching the requested status
+                    if(data.status !== filterType) return; 
+                    count++;
 
                     const div = document.createElement('div');
                     div.className = 'list-item';
+                    
+                    let actionButtons = '';
+
+                    if(filterType === 'pending') {
+                        // Show Accept/Decline for Pending
+                        actionButtons = `
+                            <button id="btn-accept-${doc.id}" class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
+                            <button id="btn-decline-${doc.id}" class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
+                        `;
+                    } else {
+                        // Show "Prescribe" button for Accepted patients
+                        actionButtons = `
+                            <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}', '${data.patientName}')">Open Profile</button>
+                        `;
+                    }
+
                     div.innerHTML = `
                         <div>
                             <strong>${data.patientName}</strong><br>
-                            <small>Requested: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                            <small>${filterType === 'pending' ? 'Requested' : 'Booked'}: ${new Date(data.requestDate).toLocaleDateString()}</small>
                         </div>
-                        <div>
-                            <button class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
-                            <button class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
+                        <div style="text-align:right;">
+                            ${actionButtons}
                         </div>
                     `;
                     list.appendChild(div);
                 });
                 
-                if(!hasPending) list.innerHTML = '<p>No pending appointments.</p>';
+                if(count === 0) list.innerHTML = `<p>No ${filterType} appointments found.</p>`;
             });
     }
 
+    // UPDATED: No Alert Popup
     function updateApt(aptId, status) {
+        // 1. Update Database
         db.collection('appointments').doc(aptId).update({ status: status })
             .then(() => {
-                alert("Appointment " + status);
-                openAppointmentList();
-            });
+                // 2. Visual Update only (No Alert)
+                if(status === 'accepted') {
+                    const btn = document.getElementById(`btn-accept-${aptId}`);
+                    const declineBtn = document.getElementById(`btn-decline-${aptId}`);
+                    
+                    if(btn) {
+                        btn.innerText = "Accepted";
+                        btn.disabled = true;
+                        btn.style.opacity = "0.7";
+                    }
+                    if(declineBtn) declineBtn.style.display = 'none'; // Hide decline button
+                } else {
+                    // If declined, maybe just remove the row or show 'Declined'
+                    const btn = document.getElementById(`btn-decline-${aptId}`);
+                    if(btn) btn.innerText = "Declined";
+                }
+            })
+            .catch(err => console.error(err));
     }
 
     // --- E. DOCTOR/PHARMACY: SEARCH PATIENT ---
@@ -703,32 +742,61 @@
 
     function loadPatientPrescriptions(patientId, patientName) {
         const container = document.getElementById('patientDetailContent');
+        
+        // We render the Form first, and the History container below it
         container.innerHTML = `
             <div style="background:#F3F4F6; padding:15px; border-radius:10px; margin-bottom:15px;">
-                <h4>Add Prescription</h4>
+                <h4>Add New Prescription</h4>
                 <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:8px;">
                 <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:8px;">
-                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')">Add Prescription</button>
+                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')">Save Prescription</button>
             </div>
-            <h4>History</h4>
-            <div id="rxHistory">Loading history...</div>
+            
+            <h4>Medical History (Prescriptions)</h4>
+            <div id="rxHistory" style="margin-top:10px;">
+                <p style="color:gray;">Loading history...</p> 
+            </div>
         `;
         
-        db.collection('prescriptions').where('patientId', '==', patientId).orderBy('timestamp', 'desc').get().then(snap => {
-            const hist = document.getElementById('rxHistory');
-            hist.innerHTML = '';
-            if (snap.empty) { hist.innerHTML = '<p>No active prescriptions.</p>'; return; }
-            snap.forEach(doc => {
-                const data = doc.data();
-                hist.innerHTML += `
-                    <div class="list-item">
-                        <div>
-                            <strong>${data.medicine}</strong><br>
-                            <small>${data.dosage} - Dr. ${data.doctorName}</small>
-                        </div>
-                    </div>`;
+        // Fetch History from Database
+        db.collection('prescriptions')
+            .where('patientId', '==', patientId)
+            .orderBy('timestamp', 'desc')
+            .get()
+            .then(snap => {
+                const hist = document.getElementById('rxHistory');
+                hist.innerHTML = ''; // Clear "Loading..." text
+                
+                if (snap.empty) { 
+                    hist.innerHTML = '<p style="color:#6B7280; font-style:italic;">No previous prescriptions recorded.</p>'; 
+                    return; 
+                }
+                
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    // Convert timestamp to readable date
+                    let dateStr = "Unknown Date";
+                    if(data.timestamp) dateStr = new Date(data.timestamp.toDate()).toLocaleDateString();
+
+                    hist.innerHTML += `
+                        <div class="list-item" style="display:block; border-left: 4px solid var(--primary);">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>${data.medicine}</strong>
+                                <small style="color:gray;">${dateStr}</small>
+                            </div>
+                            <div style="color:#4B5563; font-size:0.9rem;">
+                                ${data.dosage}
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--primary); margin-top:4px;">
+                                Prescribed by Dr. ${data.doctorName}
+                            </div>
+                        </div>`;
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('rxHistory').innerHTML = `<p style="color:red">Error loading history.</p>`;
             });
-        });
     }
 
     function addPrescription(patientId, patientName) {
