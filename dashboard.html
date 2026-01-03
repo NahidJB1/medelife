@@ -142,6 +142,7 @@
         .btn-accept { background: var(--secondary); color: white; margin-right: 5px;}
         .btn-decline { background: var(--primary); color: white; }
         .btn-cancel { background: #9CA3AF; color: white; margin-left: 5px; }
+        .btn-time { background: #F59E0B; color: white; margin-right: 5px; } /* NEW Time Button */
 
         /* Form Elements & New Redesigned Bars */
         .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
@@ -170,7 +171,6 @@
         .modern-upload-box p { font-weight: 500; color: #4B5563; }
         .modern-upload-box small { color: #9CA3AF; display: block; margin-top: 5px; }
         
-        /* The file input is hidden but covers the box */
         .file-input-hidden {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             opacity: 0; cursor: pointer;
@@ -199,7 +199,7 @@
         .search-input-field {
             flex: 1; border: none; padding: 15px;
             font-size: 1rem; border-radius: 50px; outline: none;
-            background: transparent; /* FIXED: Transparent background to avoid pill-in-pill look */
+            background: transparent; 
         }
         .search-btn-modern {
             background: var(--dark); color: white; border: none;
@@ -351,6 +351,7 @@
             </div>
         `;
 
+        // ADDED: View Schedule Action
         document.getElementById('actionGrid').innerHTML = `
             <div class="action-card" onclick="openUploadModal()">
                 <i class="fas fa-file-upload"></i>
@@ -362,10 +363,10 @@
                 <h4>Find Doctors</h4>
                 <p>Book Appointment</p>
             </div>
-            <div class="action-card" onclick="openMyReports()">
-                <i class="fas fa-file-medical-alt"></i>
-                <h4>My Reports</h4>
-                <p>View History</p>
+            <div class="action-card" onclick="openScheduleModal()">
+                <i class="fas fa-calendar-alt"></i>
+                <h4>View Schedule</h4>
+                <p>Confirmed Times</p>
             </div>
         `;
     }
@@ -429,7 +430,52 @@
         modal.classList.remove('active');
     }
 
-    // --- A. PATIENT: UPLOAD REPORT (REDESIGNED) ---
+    // --- NEW: PATIENT SCHEDULE MODAL ---
+    function openScheduleModal() {
+        modalContent.innerHTML = `<h2>My Schedule</h2><div id="myScheduleList" style="margin-top:15px">Loading...</div>`;
+        modal.classList.add('active');
+
+        db.collection('appointments')
+            .where('patientId', '==', currentUserData.uid)
+            .where('status', '==', 'accepted')
+            .get()
+            .then(snap => {
+                const list = document.getElementById('myScheduleList');
+                list.innerHTML = ''; 
+
+                if (snap.empty) {
+                    list.innerHTML = `
+                    <div style="text-align:center; color:gray; padding:20px;">
+                        <i class="fas fa-calendar-times" style="font-size:40px; margin-bottom:10px;"></i>
+                        <p>No confirmed appointments yet.</p>
+                    </div>`;
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const scheduledTime = data.scheduledTime ? `<span style="color:var(--secondary); font-weight:700;">${data.scheduledTime}</span>` : `<span style="color:#F59E0B">Time not set yet</span>`;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <strong>Dr. ${data.doctorName}</strong><br>
+                            <small>Date Booked: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.85rem; color:gray;">Scheduled Time:</div>
+                            ${scheduledTime}
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+    }
+
+
+    // --- A. PATIENT: UPLOAD REPORT ---
     function openUploadModal() {
         modalContent.innerHTML = `
             <h2 style="margin-bottom:20px;">Upload Document</h2>
@@ -463,7 +509,6 @@
         modal.classList.add('active');
     }
 
-    // Helper for the new design to show filename
     function updateFileDisplay(input) {
         const display = document.getElementById('fNameText');
         const wrapper = document.getElementById('fileSelectedName');
@@ -497,7 +542,6 @@
                 fileData: base64String,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                // FIXED: Removed success alert as requested
                 closeModal();
             }).catch(err => {
                 alert("Error: " + err.message);
@@ -532,7 +576,6 @@
                     const data = doc.data();
                     const div = document.createElement('div');
                     div.className = 'list-item';
-                    
                     div.innerHTML = `
                         <div>
                             <strong>${data.reportType}</strong><br>
@@ -545,9 +588,6 @@
                     `;
                     list.appendChild(div);
                 });
-            })
-            .catch(error => {
-                document.getElementById('myReportList').innerHTML = `<p style="color:red">Error loading reports: ${error.message}</p>`;
             });
     }
 
@@ -584,11 +624,7 @@
 
         container.innerHTML = '';
         if (realDoctors.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:20px;">
-                    <p>No doctors are currently registered.</p>
-                    <small>Please register a new user as a 'Doctor' to test this.</small>
-                </div>`;
+            container.innerHTML = `<p>No doctors found.</p>`;
             return;
         }
 
@@ -634,24 +670,17 @@
                 doctorName: docName,
                 status: 'pending',
                 requestDate: new Date().toISOString()
-            }).then(() => {
-                // FIXED: Removed success alert as requested
-                loadDoctors(); 
-            });
+            }).then(() => { loadDoctors(); });
         }
     }
 
     function cancelAppointment(aptId) {
         if(confirm("Are you sure you want to cancel this request?")) {
-            db.collection('appointments').doc(aptId).delete()
-            .then(() => {
-                // FIXED: Removed success alert as requested
-                loadDoctors(); 
-            });
+            db.collection('appointments').doc(aptId).delete().then(() => { loadDoctors(); });
         }
     }
 
-    // --- D. DOCTOR: APPOINTMENTS ---
+    // --- D. DOCTOR: APPOINTMENTS (UPDATED) ---
     function openAppointmentList(filterType) {
         const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
         modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
@@ -682,15 +711,33 @@
                             <button id="btn-decline-${doc.id}" class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
                         `;
                     } else {
+                        // UPDATED: Added Clock button and Cancel button for confirmed bookings
+                        const timeDisplay = data.scheduledTime ? `<br><small style="color:var(--secondary)">Time: ${data.scheduledTime}</small>` : '';
+                        
                         actionButtons = `
+                            <button class="list-btn btn-time" onclick="setAppointmentTime('${doc.id}')" title="Set Time"><i class="fas fa-clock"></i></button>
                             <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}', '${data.patientName}')">Open Profile</button>
+                            <button class="list-btn btn-cancel" onclick="cancelDoctorBooking('${doc.id}')"><i class="fas fa-times"></i></button>
                         `;
+
+                        div.innerHTML = `
+                            <div>
+                                <strong>${data.patientName}</strong>${timeDisplay}<br>
+                                <small>Booked: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                            </div>
+                            <div style="text-align:right;">
+                                ${actionButtons}
+                            </div>
+                        `;
+                        list.appendChild(div);
+                        return; // return to avoid overwrite below
                     }
 
+                    // For Pending items
                     div.innerHTML = `
                         <div>
                             <strong>${data.patientName}</strong><br>
-                            <small>${filterType === 'pending' ? 'Requested' : 'Booked'}: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                            <small>Requested: ${new Date(data.requestDate).toLocaleDateString()}</small>
                         </div>
                         <div style="text-align:right;">
                             ${actionButtons}
@@ -709,22 +756,39 @@
                 if(status === 'accepted') {
                     const btn = document.getElementById(`btn-accept-${aptId}`);
                     const declineBtn = document.getElementById(`btn-decline-${aptId}`);
-                    
-                    if(btn) {
-                        btn.innerText = "Accepted";
-                        btn.disabled = true;
-                        btn.style.opacity = "0.7";
-                    }
+                    if(btn) { btn.innerText = "Accepted"; btn.disabled = true; btn.style.opacity = "0.7"; }
                     if(declineBtn) declineBtn.style.display = 'none';
                 } else {
                     const btn = document.getElementById(`btn-decline-${aptId}`);
                     if(btn) btn.innerText = "Declined";
                 }
-            })
-            .catch(err => console.error(err));
+            });
     }
 
-    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT (REDESIGNED) ---
+    // --- NEW: DOCTOR SET TIME ---
+    function setAppointmentTime(aptId) {
+        const time = prompt("Enter scheduled time (e.g., 10:30 AM):");
+        if(time) {
+            db.collection('appointments').doc(aptId).update({
+                scheduledTime: time
+            }).then(() => {
+                alert("Time set successfully!");
+                openAppointmentList('accepted'); // Refresh list
+            });
+        }
+    }
+
+    // --- NEW: DOCTOR CANCEL BOOKING ---
+    function cancelDoctorBooking(aptId) {
+        if(confirm("Are you sure you want to cancel this booking? This will remove it from your list.")) {
+            db.collection('appointments').doc(aptId).delete()
+            .then(() => {
+                openAppointmentList('accepted'); // Refresh list
+            });
+        }
+    }
+
+    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT ---
     function openPatientSearch() {
         modalContent.innerHTML = `
             <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
@@ -738,7 +802,6 @@
             <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
         `;
         modal.classList.add('active');
-        // Auto-focus the input
         setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
     }
 
@@ -815,9 +878,6 @@
                         </div>
                     </div>`;
             });
-        })
-        .catch(err => {
-            container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
         });
     }
 
@@ -845,11 +905,7 @@
             .then(snap => {
                 const hist = document.getElementById('rxHistory');
                 hist.innerHTML = ''; 
-                
-                if (snap.empty) { 
-                    hist.innerHTML = '<p style="color:#6B7280; font-style:italic;">No previous prescriptions recorded.</p>'; 
-                    return; 
-                }
+                if (snap.empty) { hist.innerHTML = '<p style="color:#6B7280; font-style:italic;">No previous prescriptions recorded.</p>'; return; }
                 
                 snap.forEach(doc => {
                     const data = doc.data();
@@ -870,10 +926,6 @@
                             </div>
                         </div>`;
                 });
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('rxHistory').innerHTML = `<p style="color:red">Error loading history.</p>`;
             });
     }
 
@@ -891,7 +943,6 @@
             doctorName: currentUserData.name,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            // FIXED: Removed success alert as requested
             loadPatientPrescriptions(patientId, patientName);
         });
     }
@@ -904,9 +955,7 @@
             <div id="pharmRxList">Loading prescriptions...</div>
         `;
         
-        db.collection('prescriptions')
-            .where('patientId', '==', patientId)
-            .get()
+        db.collection('prescriptions').where('patientId', '==', patientId).get()
             .then(snap => {
                 const list = document.getElementById('pharmRxList');
                 list.innerHTML = '';
@@ -924,24 +973,17 @@
                             <button class="list-btn btn-accept" onclick="alert('Dispensing...')">Dispense</button>
                         </div>`;
                 });
-            })
-            .catch(err => {
-                 document.getElementById('pharmRxList').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             });
     }
 
     // --- H. UTILITIES ---
     function openReportInNewWindow(base64Data) {
         const win = window.open();
-        if (win) {
-            win.document.write('<iframe src="' + base64Data + '" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>');
-        } else {
-            alert("Please allow popups to view the report.");
-        }
+        if (win) win.document.write('<iframe src="' + base64Data + '" frameborder="0" style="border:0; width:100%; height:100%;" allowfullscreen></iframe>');
+        else alert("Please allow popups to view the report.");
     }
 
     async function syncUserWithDB() {
-        console.log("Syncing user identity...");
         const snap = await db.collection('users')
             .where('name', '==', currentUserData.name)
             .where('role', '==', currentUserData.role)
@@ -950,7 +992,6 @@
         if (!snap.empty) {
             const doc = snap.docs[0];
             if (doc.id !== currentUserData.uid) {
-                console.log("ID Mismatch. Switching to:", doc.id);
                 currentUserData.uid = doc.id;
                 localStorage.setItem('userUid', doc.id); 
             }
@@ -963,7 +1004,7 @@
             }, { merge: true });
         }
         
-        if(currentUserData.role === 'doctor') openAppointmentList();
+        if(currentUserData.role === 'doctor') openAppointmentList('pending');
     }
 
     function logout() {
