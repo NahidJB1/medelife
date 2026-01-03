@@ -310,10 +310,7 @@
             </div>
         </div>
 
-        <div class="action-section">
-            <div class="section-title" id="actionTitle">Quick Actions</div>
-            <div class="quick-actions" id="actionGrid"></div>
-        </div>
+    
     </main>
 
     <div class="modal-overlay" id="dashboardModal">
@@ -510,20 +507,36 @@
     }
 
     function submitReport() {
-        // ... previous code ...
+        const fileInput = document.getElementById('reportFile');
+        const reportType = document.getElementById('reportType').value;
+
+        // FIXED: Replaced Alert with Toast
         if (fileInput.files.length === 0) { 
-            showToast("Please select a file first."); // Replaced Alert
+            showToast("Please select a file first."); 
             return; 
         }
-        
-        // ... inside the .then() block ...
-        .then(() => {
-             showToast("Report uploaded successfully!"); // Replaced success
-             closeModal();
-        }).catch(err => {
-             showToast("Error uploading file."); // Replaced Error Alert
-             // ... reset buttons ...
-        });
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const base64Data = e.target.result;
+
+            db.collection('reports').add({
+                patientId: currentUserData.uid,
+                patientName: currentUserData.name,
+                reportType: reportType,
+                fileData: base64Data,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                 showToast("Report uploaded successfully!"); // FIXED: Toast success
+                 closeModal();
+            }).catch(err => {
+                 showToast("Error uploading file."); // FIXED: Toast error
+                 console.error(err);
+            });
+        };
+        reader.readAsDataURL(file);
     }
 
     // --- B. PATIENT: MY REPORTS ---
@@ -920,14 +933,29 @@ function openAppointmentList(filterType) {
     }
 
     function addPrescription(patientId, patientName) {
-        // ...
-        if (!med || !dose) { showToast("Please fill all fields."); return; } // Replaced Alert
+        const med = document.getElementById('rxMedicine').value;
+        const dose = document.getElementById('rxDosage').value;
+
+        // FIXED: Replaced Alert with Toast
+        if (!med || !dose) { 
+            showToast("Please fill all fields."); 
+            return; 
+        } 
         
         db.collection('prescriptions').add({
-            // ... fields ...
+            patientId: patientId,
+            patientName: patientName,
+            doctorId: currentUserData.uid,
+            doctorName: currentUserData.name,
+            medicine: med,
+            dosage: dose,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            showToast("Prescription added!"); // Success Feedback
+            showToast("Prescription added!"); // FIXED: Toast success
             loadPatientPrescriptions(patientId, patientName);
+        }).catch(err => {
+            showToast("Error adding prescription.");
+            console.error(err);
         });
     }
 
@@ -1204,7 +1232,7 @@ function saveAppointmentTime(aptId) {
         box.classList.add('show');
         setTimeout(() => box.classList.remove('show'), 3000);
     }
-    
+
     </script>
 </body>
 </html>
