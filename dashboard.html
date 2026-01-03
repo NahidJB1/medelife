@@ -64,38 +64,13 @@
         }
         .btn-logout:hover { background: #FEE2E2; }
 
-        /* Dashboard Cards */
-        .stats-grid { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-            gap: 1.5rem; margin-bottom: 2.5rem; 
-        }
-        .stat-card {
-            background: white; padding: 1.5rem; border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB;
-            display: flex; align-items: center; gap: 1.5rem;
-            animation: fadeIn 0.8s ease-out backwards;
-            transition: transform 0.3s;
-        }
-        .stat-card:hover { transform: translateY(-5px); border-color: var(--secondary); }
-        
-        .icon-box { 
-            width: 60px; height: 60px; border-radius: 12px; 
-            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
-        }
-        .icon-patient { background: #DCFCE7; color: var(--secondary); }
-        .icon-doc { background: #FEE2E2; color: var(--primary); }
-        .icon-pharmacy { background: #E0E7FF; color: #4F46E5; }
-        
-        .stat-info h3 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
-        .stat-info p { color: var(--gray); font-size: 0.9rem; }
-
         /* Actions */
         .action-section { margin-bottom: 2rem; animation: slideUp 1s ease-out backwards; }
         .section-title { font-size: 1.2rem; margin-bottom: 1rem; font-weight: 600; }
         
-        .quick-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
         .action-card {
-            flex: 1; min-width: 200px; background: white; padding: 2rem;
+            background: white; padding: 2rem;
             border-radius: 16px; text-align: center; cursor: pointer;
             border: 2px dashed #E5E7EB; transition: all 0.3s;
         }
@@ -143,128 +118,74 @@
         .btn-decline { background: var(--primary); color: white; }
         .btn-cancel { background: #9CA3AF; color: white; margin-left: 5px; }
 
-        /* Form Elements & New Redesigned Bars */
-        .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
-        .modal-form select, .modal-form input:not([type="file"]), .modal-form textarea {
-            width: 100%; padding: 12px; border: 1px solid #E5E7EB; 
-            border-radius: 12px; margin-bottom: 15px; outline: none;
+        /* --- COMMUNITY FEED STYLES --- */
+        .create-post-card {
+            background: white; border-radius: 16px; padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #E5E7EB; margin-bottom: 2rem;
+            animation: slideUp 0.5s ease-out;
+        }
+        .cp-input-area textarea {
+            width: 100%; border: none; resize: none; outline: none;
+            font-size: 1rem; padding: 10px 0; min-height: 80px;
             font-family: 'Poppins', sans-serif;
         }
-        .modal-form input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
+        .post-card {
+            background: white; border-radius: 16px; padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 1.5rem;
+            border: 1px solid #E5E7EB; animation: slideUp 0.5s ease-out;
+        }
+        .post-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+        .interaction-bar { display: flex; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+        .action-btn { background: none; border: none; color: var(--gray); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        .action-btn.liked { color: var(--primary); }
+        .comments-section { margin-top: 1rem; background: #F9FAFB; padding: 1rem; border-radius: 12px; display: none; }
+        .comments-section.open { display: block; }
+        .comment-input-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .comment-input-box input { flex: 1; padding: 8px 12px; border: 1px solid #E5E7EB; border-radius: 20px; outline: none; }
+        .role-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+        .role-patient { background: #E0F2FE; color: #0284C7; }
+        .role-doctor { background: #DCFCE7; color: #16A34A; }
 
-        /* --- REDESIGN: Modern Upload Area (Patient) --- */
-        .modern-upload-box {
-            border: 2px dashed #E5E7EB; border-radius: 16px;
-            padding: 40px 20px; text-align: center;
-            background: #F9FAFB; cursor: pointer;
-            transition: all 0.3s ease; position: relative;
-            margin-bottom: 20px;
+        /* --- TABS --- */
+        .dashboard-tabs {
+            display: flex; gap: 15px; margin-bottom: 2.5rem;
+            border-bottom: 2px solid #E5E7EB; padding-bottom: 0;
         }
-        .modern-upload-box:hover {
-            border-color: var(--primary); background: #FEF2F2;
+        .tab-item {
+            padding: 12px 24px; border-radius: 12px 12px 0 0; cursor: pointer;
+            font-weight: 600; color: var(--gray); transition: all 0.3s;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 3px solid transparent; margin-bottom: -2px;
         }
-        .modern-upload-box i {
-            font-size: 3rem; color: #9CA3AF; margin-bottom: 15px; transition: 0.3s;
-        }
-        .modern-upload-box:hover i { color: var(--primary); transform: scale(1.1); }
-        .modern-upload-box p { font-weight: 500; color: #4B5563; }
-        .modern-upload-box small { color: #9CA3AF; display: block; margin-top: 5px; }
-        
-        /* The file input is hidden but covers the box */
-        .file-input-hidden {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; cursor: pointer;
-        }
-        .file-name-display {
-            display: inline-block; margin-top: 10px;
-            padding: 5px 12px; background: white; border-radius: 20px;
-            font-size: 0.85rem; color: var(--primary);
-            border: 1px solid #FEE2E2; font-weight: 600;
-        }
+        .tab-item:hover, .tab-item.active { color: var(--primary); background: #FEF2F2; }
+        .tab-item.active { border-bottom: 3px solid var(--primary); }
+        .tab-badge { background: var(--primary); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; display: none; }
 
-        /* --- REDESIGN: Modern Search Bar (Doc/Pharmacy) --- */
-        .modern-search-bar {
-            position: relative; width: 100%; margin-bottom: 25px;
+        /* --- TOAST --- */
+        #toast-box {
+            position: fixed; bottom: 30px; right: 30px;
+            background: var(--dark); color: white; padding: 15px 25px;
+            border-radius: 12px; z-index: 9999; opacity: 0; transform: translateY(20px);
+            transition: all 0.3s ease; pointer-events: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border-radius: 50px; background: white;
-            display: flex; align-items: center; padding: 5px;
-            border: 1px solid transparent; transition: 0.3s;
+            display: flex; align-items: center; gap: 10px;
         }
-        .modern-search-bar:focus-within {
-            border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.2);
-        }
-        .search-icon {
-            padding-left: 20px; color: #9CA3AF; font-size: 1.2rem;
-        }
-        .search-input-field {
-            flex: 1; border: none; padding: 15px;
-            font-size: 1rem; border-radius: 50px; outline: none;
-            background: transparent; /* FIXED: Transparent background to avoid pill-in-pill look */
-        }
-        .search-btn-modern {
-            background: var(--dark); color: white; border: none;
-            padding: 12px 25px; border-radius: 40px;
-            font-weight: 600; cursor: pointer; transition: 0.3s;
-            margin-right: 5px;
-        }
-        .search-btn-modern:hover { background: var(--primary); transform: translateX(-2px); }
-
-
-        /* Animations */
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Mobile Responsive */
+        #toast-box.show { opacity: 1; transform: translateY(0); }
+        
+        /* Mobile */
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); position: fixed; }
             .sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
         }
 
-        /* --- Add this to your existing CSS --- */
-.btn-time {
-    background: #F59E0B; /* Amber color */
-    color: white;
-    margin-right: 5px;
-    padding: 8px 12px; /* Slightly different padding for icon */
-}
-.btn-time:hover { background: #D97706; }
-
-
-/* --- NEW: Tab Bar (Replacing Stats) --- */
-.dashboard-tabs {
-    display: flex; gap: 15px; margin-bottom: 2.5rem;
-    border-bottom: 2px solid #E5E7EB; padding-bottom: 0;
-}
-.tab-item {
-    padding: 12px 24px; border-radius: 12px 12px 0 0; cursor: pointer;
-    font-weight: 600; color: var(--gray); transition: all 0.3s;
-    display: flex; align-items: center; gap: 10px;
-    border-bottom: 3px solid transparent; margin-bottom: -2px;
-}
-.tab-item:hover { background: #FEF2F2; color: var(--primary); }
-.tab-item.active { 
-    color: var(--primary); 
-    border-bottom: 3px solid var(--primary);
-    background: linear-gradient(to top, #FEF2F2, transparent);
-}
-.tab-badge {
-    background: var(--primary); color: white; font-size: 0.7rem;
-    padding: 2px 6px; border-radius: 50%; display: none; /* Hidden by default */
-}
-
-/* --- NEW: Toast Notification (Replaces Alerts) --- */
-#toast-box {
-    position: fixed; bottom: 30px; right: 30px;
-    background: var(--dark); color: white; padding: 15px 25px;
-    border-radius: 12px; z-index: 9999; opacity: 0; transform: translateY(20px);
-    transition: all 0.3s ease; pointer-events: none;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    display: flex; align-items: center; gap: 10px;
-}
-#toast-box.show { opacity: 1; transform: translateY(0); }
-
+        /* Form Inputs */
+        .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .modal-form select, .modal-form input, .modal-form textarea {
+            width: 100%; padding: 12px; border: 1px solid #E5E7EB; 
+            border-radius: 12px; margin-bottom: 15px; outline: none;
+            font-family: 'Poppins', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -278,7 +199,11 @@
             <span>MED<span style="color:var(--secondary)">e</span>LIFE</span>
         </div>
 
-        <div class="nav-items" id="sidebarNav"></div>
+        <div class="nav-items">
+            <div class="nav-item active" onclick="switchMainTab(this, 'home')"><i class="fas fa-home"></i> Home</div>
+            <div class="nav-item" onclick="switchMainTab(this, 'community')"><i class="fas fa-users"></i> Community</div>
+            <div class="nav-item" onclick="switchMainTab(this, 'notifications')"><i class="fas fa-bell"></i> Notifications</div>
+        </div>
 
         <div class="user-mini-profile">
             <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
@@ -301,7 +226,10 @@
         </header>
 
         <div class="dashboard-tabs" id="mainTabs">
-            </div>
+            <div class="tab-item active" onclick="switchMainTab(this, 'home')"><i class="fas fa-home"></i> Home</div>
+            <div class="tab-item" onclick="switchMainTab(this, 'community')"><i class="fas fa-users"></i> Community</div>
+            <div class="tab-item" onclick="switchMainTab(this, 'notifications')"><i class="fas fa-bell"></i> Notifications</div>
+        </div>
 
         <div id="tabContentArea">
             <div class="action-section">
@@ -309,8 +237,6 @@
                 <div class="quick-actions" id="actionGrid"></div>
             </div>
         </div>
-
-    
     </main>
 
     <div class="modal-overlay" id="dashboardModal">
@@ -325,19 +251,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
     <script src="js/firebase-init.js"></script>
 
     <script>
-    // --- 0. FIREBASE SETUP ---
     const db = firebase.firestore();
     const auth = firebase.auth();
-
     let currentUserData = null;
     const modal = document.getElementById('dashboardModal');
     const modalContent = document.getElementById('modalContent');
 
-    // --- 1. INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
         initDashboard();
     });
@@ -348,22 +270,13 @@
 
         const role = localStorage.getItem('userRole') || 'patient';
         const name = localStorage.getItem('userName') || 'User';
-
         let storedUid = localStorage.getItem('userUid');
-        if (!storedUid) {
-            storedUid = 'user_' + Math.floor(Math.random() * 1000000);
-            localStorage.setItem('userUid', storedUid);
-        }
+        if (!storedUid) { storedUid = 'user_' + Math.floor(Math.random() * 1000000); localStorage.setItem('userUid', storedUid); }
 
-        currentUserData = {
-            name: name,
-            role: role,
-            uid: storedUid
-        };
+        currentUserData = { name: name, role: role, uid: storedUid };
 
-        // UI Header
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
+        // Header Info
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById('welcomeTitle').innerHTML = `Welcome back, <span style="color: var(--primary)">${name}</span>`;
         document.getElementById('sideName').innerText = name;
         document.getElementById('sideRole').innerText = role.toUpperCase();
@@ -374,865 +287,307 @@
             if (data.photo) document.getElementById('sideAvatar').src = data.photo;
         }
 
-        // --- SYNC ID WITH DB ---
         await syncUserWithDB();
 
-        // ROUTING
+        // Render Initial View
         if (role === 'doctor') renderDoctorView();
         else if (role === 'pharmacy') renderPharmacyView();
         else renderPatientView();
     }
 
-
-    // --- 2. PATIENT VIEW ---
+    // --- VIEW RENDERING ---
     function renderPatientView() {
-        renderTabs('patient');
-
-        // Stats removed. Only Quick Actions remain.
         document.getElementById('actionGrid').innerHTML = `
-            <div class="action-card" onclick="openUploadModal()">
-                <i class="fas fa-file-upload"></i>
-                <h4>Upload Report</h4>
-                <p>X-Ray, ECG, etc.</p>
-            </div>
-            <div class="action-card" onclick="openFindDoctorModal()">
-                <i class="fas fa-user-md"></i>
-                <h4>Find Doctors</h4>
-                <p>Book Appointment</p>
-            </div>
-            <div class="action-card" onclick="openPatientSchedule()">
-                <i class="fas fa-calendar-alt"></i>
-                <h4>View Schedule</h4>
-                <p>Check Appointments</p>
-            </div>
-            <div class="action-card" onclick="openMyReports()">
-                <i class="fas fa-file-medical-alt"></i>
-                <h4>My Reports</h4>
-                <p>View History</p>
-            </div>
+            <div class="action-card" onclick="openUploadModal()"><i class="fas fa-file-upload"></i><h4>Upload Report</h4><p>X-Ray, ECG, etc.</p></div>
+            <div class="action-card" onclick="openFindDoctorModal()"><i class="fas fa-user-md"></i><h4>Find Doctors</h4><p>Book Appointment</p></div>
+            <div class="action-card" onclick="openPatientSchedule()"><i class="fas fa-calendar-alt"></i><h4>View Schedule</h4><p>Check Appointments</p></div>
+            <div class="action-card" onclick="openMyReports()"><i class="fas fa-file-medical-alt"></i><h4>My Reports</h4><p>View History</p></div>
         `;
     }
-
-    // --- 3. DOCTOR VIEW ---
     function renderDoctorView() {
-        renderTabs('doctor');
-
         document.getElementById('actionGrid').innerHTML = `
-            <div class="action-card" onclick="openAppointmentList('pending')">
-                <i class="fas fa-calendar-check" style="color:#F59E0B"></i>
-                <h4>Requests</h4>
-                <p>Pending Approvals</p>
-            </div>
-            <div class="action-card" onclick="openAppointmentList('accepted')">
-                <i class="fas fa-clipboard-list"></i>
-                <h4>View Bookings</h4>
-                <p>Confirmed Patients</p>
-            </div>
-            <div class="action-card" onclick="openPatientSearch()">
-                <i class="fas fa-user-injured"></i>
-                <h4>Find Patient</h4>
-                <p>View History & Prescribe</p>
-            </div>
+            <div class="action-card" onclick="openAppointmentList('pending')"><i class="fas fa-calendar-check" style="color:#F59E0B"></i><h4>Requests</h4><p>Pending Approvals</p></div>
+            <div class="action-card" onclick="openAppointmentList('accepted')"><i class="fas fa-clipboard-list"></i><h4>View Bookings</h4><p>Confirmed Patients</p></div>
+            <div class="action-card" onclick="openPatientSearch()"><i class="fas fa-user-injured"></i><h4>Find Patient</h4><p>View History & Prescribe</p></div>
         `;
     }
-
-    // --- 4. PHARMACY VIEW ---
     function renderPharmacyView() {
-        renderTabs('pharmacy');
-
         document.getElementById('actionGrid').innerHTML = `
-            <div class="action-card" onclick="openPatientSearch()">
-                <i class="fas fa-search"></i>
-                <h4>Search Patient</h4>
-                <p>View Prescriptions</p>
-            </div>
+            <div class="action-card" onclick="openPatientSearch()"><i class="fas fa-search"></i><h4>Search Patient</h4><p>View Prescriptions</p></div>
         `;
     }
 
-
-
-    // ==========================================
-    //        LOGIC FUNCTIONS (MODALS)
-    // ==========================================
-
-    function closeModal() {
-        modal.classList.remove('active');
-    }
-
-    // --- A. PATIENT: UPLOAD REPORT (REDESIGNED) ---
-    function openUploadModal() {
-        modalContent.innerHTML = `
-            <h2 style="margin-bottom:20px;">Upload Document</h2>
-            <div class="modal-form">
-                <label>Type of Document</label>
-                <select id="reportType">
-                    <option value="X-Ray">X-Ray / Scan</option>
-                    <option value="ECG">ECG Report</option>
-                    <option value="Blood Test">Blood / Lab Test</option>
-                    <option value="Prescription">Old Prescription</option>
-                </select>
-                
-                <div class="modern-upload-box">
-                    <input type="file" id="reportFile" class="file-input-hidden" accept="image/*,.pdf" onchange="updateFileDisplay(this)">
-                    <div id="uploadContentUi">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>Click or Drag file here to upload</p>
-                        <small>Supports: PDF, JPG, PNG</small>
-                    </div>
-                </div>
-
-                <div id="fileSelectedName" style="text-align:center; margin-bottom:15px; display:none;">
-                    <span class="file-name-display" id="fNameText"></span>
-                </div>
-
-                <button class="list-btn btn-book" id="btn-upload-action" style="width:100%; padding:15px; font-size:1rem;" onclick="submitReport()">
-                    <i class="fas fa-check"></i> Submit Report
-                </button>
-            </div>
-        `;
-        modal.classList.add('active');
-    }
-
-    // Helper for the new design to show filename
-    function updateFileDisplay(input) {
-        const display = document.getElementById('fNameText');
-        const wrapper = document.getElementById('fileSelectedName');
-        if(input.files && input.files[0]) {
-            display.innerText = input.files[0].name;
-            wrapper.style.display = 'block';
-            document.querySelector('.modern-upload-box').style.borderColor = 'var(--secondary)';
-            document.querySelector('.modern-upload-box i').style.color = 'var(--secondary)';
-            document.querySelector('.modern-upload-box i').className = 'fas fa-file-check';
-        }
-    }
-
-    function submitReport() {
-        const fileInput = document.getElementById('reportFile');
-        const reportType = document.getElementById('reportType').value;
-
-        // FIXED: Replaced Alert with Toast
-        if (fileInput.files.length === 0) { 
-            showToast("Please select a file first."); 
-            return; 
-        }
-
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-            const base64Data = e.target.result;
-
-            db.collection('reports').add({
-                patientId: currentUserData.uid,
-                patientName: currentUserData.name,
-                reportType: reportType,
-                fileData: base64Data,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                 showToast("Report uploaded successfully!"); // FIXED: Toast success
-                 closeModal();
-            }).catch(err => {
-                 showToast("Error uploading file."); // FIXED: Toast error
-                 console.error(err);
-            });
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // --- B. PATIENT: MY REPORTS ---
-    function openMyReports() {
-        modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
-        modal.classList.add('active');
-
-        db.collection('reports')
-            .where('patientId', '==', currentUserData.uid)
-            .get()
-            .then(snap => {
-                const list = document.getElementById('myReportList');
-                list.innerHTML = ''; 
-
-                if (snap.empty) {
-                    list.innerHTML = `
-                    <div style="text-align:center; color:gray; padding:20px;">
-                        <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:10px;"></i>
-                        <p>No reports found.</p>
-                    </div>`;
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'list-item';
-                    
-                    div.innerHTML = `
-                        <div>
-                            <strong>${data.reportType}</strong><br>
-                            <small>${new Date().toLocaleDateString()}</small>
-                        </div>
-                        <div>
-                            <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View</button>
-                            <a href="${data.fileData}" download="Report" class="list-btn btn-book" style="text-decoration:none; margin-left:5px;">Download</a>
-                        </div>
-                    `;
-                    list.appendChild(div);
-                });
-            })
-            .catch(error => {
-                document.getElementById('myReportList').innerHTML = `<p style="color:red">Error loading reports: ${error.message}</p>`;
-            });
-    }
-
-    // --- C. PATIENT: FIND DOCTOR ---
-    function openFindDoctorModal() {
-        modalContent.innerHTML = `
-            <h2>Find a Specialist</h2>
-            <div id="doctorListContainer" style="margin-top:20px;">Loading doctors...</div>
-        `;
-        modal.classList.add('active');
-        loadDoctors();
-    }
-
-    async function loadDoctors() {
-        const container = document.getElementById('doctorListContainer');
-        
-        let realDoctors = [];
-        try {
-            const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
-            docSnap.forEach(doc => realDoctors.push({ id: doc.id, ...doc.data() }));
-        } catch (e) { 
-            container.innerHTML = `<p style="color:red">Error connecting to database.</p>`;
-            return;
-        }
-
-        let myApts = {};
-        try {
-            const aptSnap = await db.collection('appointments').where('patientId', '==', currentUserData.uid).get();
-            aptSnap.forEach(doc => {
-                const data = doc.data();
-                myApts[data.doctorId] = { status: data.status, aptId: doc.id };
-            });
-        } catch (e) { console.log(e); }
-
-        container.innerHTML = '';
-        if (realDoctors.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:20px;">
-                    <p>No doctors are currently registered.</p>
-                    <small>Please register a new user as a 'Doctor' to test this.</small>
-                </div>`;
-            return;
-        }
-
-        realDoctors.forEach(doc => {
-            const displayName = doc.name || "Unknown Doctor";
-            const specialty = doc.special || "Specialist";
-            
-            let actionHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
-            
-            if (myApts[doc.id]) {
-                const aptInfo = myApts[doc.id];
-                const status = aptInfo.status;
-
-                if(status === 'accepted') {
-                    actionHtml = `<button class="list-btn" style="background:var(--secondary); color:white; cursor:default">Approved</button>`;
-                } else if (status === 'pending') {
-                    actionHtml = `
-                        <button class="list-btn" style="background:#F59E0B; color:white; cursor:default">Requested</button>
-                        <button class="list-btn btn-cancel" onclick="cancelAppointment('${aptInfo.aptId}')">Cancel</button>
-                    `;
-                }
-            }
-            
-            const div = document.createElement('div');
-            div.className = 'list-item';
-            div.innerHTML = `
-                <div>
-                    <strong>${displayName}</strong><br>
-                    <small style="color:gray">${specialty}</small>
-                </div>
-                <div>${actionHtml}</div>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function bookAppointment(docId, docName) {
-        if (confirm(`Book appointment with ${docName}?`)) {
-            db.collection('appointments').add({
-                patientId: currentUserData.uid,
-                patientName: currentUserData.name,
-                doctorId: docId, 
-                doctorName: docName,
-                status: 'pending',
-                requestDate: new Date().toISOString()
-            }).then(() => {
-                // FIXED: Removed success alert as requested
-                loadDoctors(); 
-            });
-        }
-    }
-
-    // --- UPDATED: CANCEL LOGIC (Shared) ---
-function cancelAppointment(aptId, role = 'patient') {
-    if(confirm("Are you sure you want to cancel this appointment?")) {
-        db.collection('appointments').doc(aptId).delete()
-        .then(() => {
-            if(role === 'doctor') {
-                openAppointmentList('accepted'); // Refresh doctor view
-            } else {
-                loadDoctors(); // Refresh patient view
-            }
-        });
-    }
-}
-
-    // --- D. DOCTOR: APPOINTMENTS ---
-    // --- D. DOCTOR: APPOINTMENTS ---
-function openAppointmentList(filterType) {
-    const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
-    modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
-    modal.classList.add('active');
-
-    db.collection('appointments')
-        .where('doctorId', '==', currentUserData.uid)
-        .get()
-        .then(snap => {
-            const list = document.getElementById('aptList');
-            list.innerHTML = '';
-            
-            let count = 0;
-            
-            snap.forEach(doc => {
-                const data = doc.data();
-                if(data.status !== filterType) return; 
-                count++;
-
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                
-                let actionButtons = '';
-
-                if(filterType === 'pending') {
-                    actionButtons = `
-                        <button id="btn-accept-${doc.id}" class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
-                        <button id="btn-decline-${doc.id}" class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
-                    `;
-                } else {
-                    // --- UPDATED: Confirmed Bookings Actions ---
-                    // 1. Clock Button (Set Time)
-                    // 2. Open Profile
-                    // 3. Cancel Button
-                    
-                    let timeDisplay = data.scheduledTime ? `<br><small style="color:var(--secondary)"><i class="fas fa-clock"></i> ${data.scheduledTime}</small>` : '';
-
-                    actionButtons = `
-                        <button class="list-btn btn-time" title="Set Time" onclick="openTimePicker('${doc.id}')"><i class="fas fa-clock"></i></button>
-                        <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}', '${data.patientName}')">Open Profile</button>
-                        <button class="list-btn btn-cancel" onclick="cancelAppointment('${doc.id}', 'doctor')">Cancel</button>
-                    `;
-                    
-                    // Add time to the left side info
-                    div.dataset.hasTime = !!data.scheduledTime; // helper
-                    if(data.scheduledTime) {
-                        div.style.borderLeft = "4px solid var(--secondary)";
-                    }
-                }
-
-                div.innerHTML = `
-                    <div>
-                        <strong>${data.patientName}</strong><br>
-                        <small>${filterType === 'pending' ? 'Requested' : 'Booked'}: ${new Date(data.requestDate).toLocaleDateString()}</small>
-                        ${data.scheduledTime ? `<br><small style="color:#2563EB; font-weight:600;"><i class="far fa-clock"></i> Time: ${data.scheduledTime}</small>` : ''}
-                    </div>
-                    <div style="text-align:right; display:flex; align-items:center; justify-content:flex-end;">
-                        ${actionButtons}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-            
-            if(count === 0) list.innerHTML = `<p>No ${filterType} appointments found.</p>`;
-        });
-}
-
-
-
-    function updateApt(aptId, status) {
-        db.collection('appointments').doc(aptId).update({ status: status })
-            .then(() => {
-                if(status === 'accepted') {
-                    const btn = document.getElementById(`btn-accept-${aptId}`);
-                    const declineBtn = document.getElementById(`btn-decline-${aptId}`);
-                    
-                    if(btn) {
-                        btn.innerText = "Accepted";
-                        btn.disabled = true;
-                        btn.style.opacity = "0.7";
-                    }
-                    if(declineBtn) declineBtn.style.display = 'none';
-                } else {
-                    const btn = document.getElementById(`btn-decline-${aptId}`);
-                    if(btn) btn.innerText = "Declined";
-                }
-            })
-            .catch(err => console.error(err));
-    }
-
-    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT (REDESIGNED) ---
-    function openPatientSearch() {
-        modalContent.innerHTML = `
-            <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
-            
-            <div class="modern-search-bar">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name..." autocomplete="off">
-                <button class="search-btn-modern" onclick="performSearch()">Search</button>
-            </div>
-
-            <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
-        `;
-        modal.classList.add('active');
-        // Auto-focus the input
-        setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
-    }
-
-    function performSearch() {
-        const query = document.getElementById('pharmacySearchInput').value.toLowerCase();
-        const resultsDiv = document.getElementById('pharmacyResults');
-        resultsDiv.innerHTML = '<div style="text-align:center; color:gray"><i class="fas fa-spinner fa-spin"></i> Searching database...</div>';
-
-        db.collection('users').where('role', '==', 'patient').get().then(snap => {
-            resultsDiv.innerHTML = '';
-            let found = false;
-
-            snap.forEach(doc => {
-                const data = doc.data();
-                const pName = (data.name || '').toLowerCase();
-                
-                if (pName.includes(query)) {
-                    found = true;
-                    const div = document.createElement('div');
-                    div.className = 'list-item';
-                    
-                    const btnAction = currentUserData.role === 'doctor' 
-                        ? `openDoctorPatientView('${doc.id}', '${data.name}')`
-                        : `openPharmacyPatientView('${doc.id}', '${data.name}')`;
-
-                    div.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="background:#F3F4F6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                                <i class="fas fa-user" style="color:#9CA3AF"></i>
-                            </div>
-                            <div>
-                                <strong>${data.name}</strong><br><small style="font-size:0.75rem; color:#9CA3AF">ID: ${doc.id.substring(0,8)}...</small>
-                            </div>
-                        </div>
-                        <button class="list-btn btn-view" onclick="${btnAction}">View Profile</button>
-                    `;
-                    resultsDiv.appendChild(div);
-                }
-            });
-            if (!found) resultsDiv.innerHTML = `<p style="text-align:center; color:gray; padding:20px;">No patients found matching "${query}".</p>`;
-        });
-    }
-
-    // --- F. DOCTOR: PATIENT PROFILE ---
-    function openDoctorPatientView(patientId, patientName) {
-        modalContent.innerHTML = `
-            <h2>Patient: ${patientName}</h2>
-            <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                <button class="list-btn" onclick="loadPatientReports('${patientId}')" style="background:gray">Reports</button>
-                <button class="list-btn btn-book" onclick="loadPatientPrescriptions('${patientId}', '${patientName}')">Prescriptions</button>
-            </div>
-            <div id="patientDetailContent">Loading...</div>
-        `;
-        loadPatientPrescriptions(patientId, patientName);
-    }
-
-    function loadPatientReports(patientId) {
-        const container = document.getElementById('patientDetailContent');
-        container.innerHTML = 'Loading Reports...';
-        
-        db.collection('reports').where('patientId', '==', patientId).get()
-        .then(snap => {
-            container.innerHTML = '';
-            if (snap.empty) { container.innerHTML = '<p>No reports found for this patient.</p>'; return; }
-            
-            snap.forEach(doc => {
-                const data = doc.data();
-                container.innerHTML += `
-                    <div class="list-item">
-                        <span>${data.reportType}</span>
-                        <div>
-                             <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View</button>
-                             <a href="${data.fileData}" download="Report" class="list-btn btn-book">Download</a>
-                        </div>
-                    </div>`;
-            });
-        })
-        .catch(err => {
-            container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
-        });
-    }
-
-    function loadPatientPrescriptions(patientId, patientName) {
-        const container = document.getElementById('patientDetailContent');
-        
-        container.innerHTML = `
-            <div style="background:#F3F4F6; padding:15px; border-radius:10px; margin-bottom:15px;">
-                <h4>Add New Prescription</h4>
-                <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:12px; border-radius:8px; border:1px solid #E5E7EB;">
-                <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:12px; border-radius:8px; border:1px solid #E5E7EB;">
-                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')" style="margin-top:10px;">Save Prescription</button>
-            </div>
-            
-            <h4>Medical History (Prescriptions)</h4>
-            <div id="rxHistory" style="margin-top:10px;">
-                <p style="color:gray;">Loading history...</p> 
-            </div>
-        `;
-        
-        db.collection('prescriptions')
-            .where('patientId', '==', patientId)
-            .orderBy('timestamp', 'desc')
-            .get()
-            .then(snap => {
-                const hist = document.getElementById('rxHistory');
-                hist.innerHTML = ''; 
-                
-                if (snap.empty) { 
-                    hist.innerHTML = '<p style="color:#6B7280; font-style:italic;">No previous prescriptions recorded.</p>'; 
-                    return; 
-                }
-                
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    let dateStr = "Unknown Date";
-                    if(data.timestamp) dateStr = new Date(data.timestamp.toDate()).toLocaleDateString();
-
-                    hist.innerHTML += `
-                        <div class="list-item" style="display:block; border-left: 4px solid var(--primary);">
-                            <div style="display:flex; justify-content:space-between;">
-                                <strong>${data.medicine}</strong>
-                                <small style="color:gray;">${dateStr}</small>
-                            </div>
-                            <div style="color:#4B5563; font-size:0.9rem;">
-                                ${data.dosage}
-                            </div>
-                            <div style="font-size:0.8rem; color:var(--primary); margin-top:4px;">
-                                Prescribed by Dr. ${data.doctorName}
-                            </div>
-                        </div>`;
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('rxHistory').innerHTML = `<p style="color:red">Error loading history.</p>`;
-            });
-    }
-
-    function addPrescription(patientId, patientName) {
-        const med = document.getElementById('rxMedicine').value;
-        const dose = document.getElementById('rxDosage').value;
-
-        // FIXED: Replaced Alert with Toast
-        if (!med || !dose) { 
-            showToast("Please fill all fields."); 
-            return; 
-        } 
-        
-        db.collection('prescriptions').add({
-            patientId: patientId,
-            patientName: patientName,
-            doctorId: currentUserData.uid,
-            doctorName: currentUserData.name,
-            medicine: med,
-            dosage: dose,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            showToast("Prescription added!"); // FIXED: Toast success
-            loadPatientPrescriptions(patientId, patientName);
-        }).catch(err => {
-            showToast("Error adding prescription.");
-            console.error(err);
-        });
-    }
-
-    // --- G. PHARMACY: VIEW PRESCRIPTIONS ---
-    function openPharmacyPatientView(patientId, patientName) {
-        modalContent.innerHTML = `
-            <h2>Pharmacy: ${patientName}</h2>
-            <p>Active Prescriptions</p>
-            <div id="pharmRxList">Loading prescriptions...</div>
-        `;
-        
-        db.collection('prescriptions')
-            .where('patientId', '==', patientId)
-            .get()
-            .then(snap => {
-                const list = document.getElementById('pharmRxList');
-                list.innerHTML = '';
-                if (snap.empty) { list.innerHTML = '<p>No prescriptions found.</p>'; return; }
-                
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    list.innerHTML += `
-                        <div class="list-item">
-                            <div>
-                                <strong>${data.medicine}</strong><br>
-                                <small>${data.dosage}</small><br>
-                                <small style="color:var(--primary)">Dr. ${data.doctorName}</small>
-                            </div>
-                            <button class="list-btn btn-accept" onclick="alert('Dispensing...')">Dispense</button>
-                        </div>`;
-                });
-            })
-            .catch(err => {
-                 document.getElementById('pharmRxList').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
-            });
-    }
-
-    // --- H. UTILITIES ---
-    function openReportInNewWindow(base64Data) {
-        const win = window.open();
-        if (win) {
-            win.document.write('<iframe src="' + base64Data + '" ... ></iframe>'); // keep iframe code
-        } else {
-            showToast("Popups blocked. Allow them to view reports."); // Replaced Alert
-        }
-    }
-
-    async function syncUserWithDB() {
-        console.log("Syncing user identity...");
-        const snap = await db.collection('users')
-            .where('name', '==', currentUserData.name)
-            .where('role', '==', currentUserData.role)
-            .get();
-
-        if (!snap.empty) {
-            const doc = snap.docs[0];
-            if (doc.id !== currentUserData.uid) {
-                console.log("ID Mismatch. Switching to:", doc.id);
-                currentUserData.uid = doc.id;
-                localStorage.setItem('userUid', doc.id); 
-            }
-        } else {
-            db.collection('users').doc(currentUserData.uid).set({
-                name: currentUserData.name,
-                role: currentUserData.role,
-                special: 'General',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        }
-        
-        if(currentUserData.role === 'doctor') openAppointmentList();
-    }
-
-    function logout() {
-        auth.signOut().then(() => {
-            localStorage.setItem('isLoggedIn', 'false');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userUid');
-            window.location.href = 'index.html';
-        });
-    }
-
-    // --- NEW: PATIENT SCHEDULE VIEW ---
-function openPatientSchedule() {
-    modalContent.innerHTML = `<h2>My Schedule</h2><div id="scheduleList" style="margin-top:15px">Loading...</div>`;
-    modal.classList.add('active');
-
-    db.collection('appointments')
-        .where('patientId', '==', currentUserData.uid)
-        .where('status', '==', 'accepted')
-        .get()
-        .then(snap => {
-            const list = document.getElementById('scheduleList');
-            list.innerHTML = '';
-
-            if (snap.empty) {
-                list.innerHTML = '<p style="text-align:center; color:gray">No confirmed appointments yet.</p>';
-                return;
-            }
-
-            snap.forEach(doc => {
-                const data = doc.data();
-                // Check if doctor has set a time
-                const timeInfo = data.scheduledTime 
-                    ? `<span style="color:#2563EB; font-weight:700; font-size:1.1rem;"><i class="far fa-clock"></i> ${data.scheduledTime}</span>` 
-                    : `<span style="color:#F59E0B; font-style:italic;">Time not set by doctor yet</span>`;
-
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <div>
-                        <strong>Dr. ${data.doctorName}</strong><br>
-                        <small>Approved Date: ${new Date().toLocaleDateString()}</small>
-                    </div>
-                    <div style="text-align:right;">
-                        ${timeInfo}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        });
-}
-
-
-// --- NEW: DOCTOR SET TIME LOGIC ---
-function openTimePicker(aptId) {
-    // We replace the modal content with a small form to set time
-    modalContent.innerHTML = `
-        <h3>Set Appointment Time</h3>
-        <p style="color:gray; margin-bottom:15px;">Choose a time for this patient.</p>
-        
-        <div class="modal-form">
-            <label>Select Date & Time</label>
-            <input type="datetime-local" id="aptTimeInput">
-            
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="list-btn btn-book" style="flex:1; padding:15px;" onclick="saveAppointmentTime('${aptId}')">Save Time</button>
-                <button class="list-btn btn-cancel" style="flex:1; padding:15px;" onclick="openAppointmentList('accepted')">Back</button>
-            </div>
-        </div>
-    `;
-}
-
-function saveAppointmentTime(aptId) {
-    const timeVal = document.getElementById('aptTimeInput').value;
-    if(!timeVal) return alert("Please select a time");
-
-    // Format the date/time to look nice (e.g., "Oct 12, 10:30 AM")
-    const dateObj = new Date(timeVal);
-    const formattedTime = dateObj.toLocaleString('en-US', { 
-        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true 
-    });
-
-    db.collection('appointments').doc(aptId).update({
-        scheduledTime: formattedTime,
-        rawTime: timeVal // keep raw for sorting if needed later
-    }).then(() => {
-        // Return to list
-        openAppointmentList('accepted');
-    });
-}
-
-// --- NEW: TAB LOGIC ---
-    function renderTabs(role) {
-        document.getElementById('mainTabs').innerHTML = `
-            <div class="tab-item active" onclick="switchMainTab(this, 'home')">
-                <i class="fas fa-home"></i> Home
-            </div>
-            <div class="tab-item" onclick="switchMainTab(this, 'community')">
-                <i class="fas fa-users"></i> Community
-            </div>
-            <div class="tab-item" onclick="switchMainTab(this, 'notifications')">
-                <i class="fas fa-bell"></i> Notifications <span id="notifBadge" class="tab-badge">0</span>
-            </div>
-        `;
-    }
-
+    // --- TAB SWITCHING LOGIC (UPDATED WITH FEED) ---
     function switchMainTab(el, tabName) {
-        // 1. Update UI classes
-        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
+        // Update Active Class
+        document.querySelectorAll('.tab-item, .nav-item').forEach(t => t.classList.remove('active'));
+        if(el) el.classList.add('active'); // Highlight clicked tab
+        
+        // Find corresponding sidebar/tab item to highlight both
+        const allNavs = document.querySelectorAll('.nav-item');
+        if(tabName === 'home') allNavs[0].classList.add('active');
+        if(tabName === 'community') allNavs[1].classList.add('active');
+        if(tabName === 'notifications') allNavs[2].classList.add('active');
 
         const contentArea = document.getElementById('tabContentArea');
 
-        // 2. Logic for tabs
         if (tabName === 'home') {
-            // Restore Home View (Quick Actions)
-            contentArea.innerHTML = `
-                <div class="action-section">
-                    <div class="section-title">Quick Actions</div>
-                    <div class="quick-actions" id="actionGrid"></div>
-                </div>
-            `;
-            // Re-render the specific role actions because we wiped the container
+            contentArea.innerHTML = `<div class="action-section"><div class="section-title">Quick Actions</div><div class="quick-actions" id="actionGrid"></div></div>`;
             if (currentUserData.role === 'doctor') renderDoctorView();
             else if (currentUserData.role === 'pharmacy') renderPharmacyView();
             else renderPatientView();
         
         } else if (tabName === 'community') {
-            // Placeholder for Blog/Community
+            // --- FULL FEED INTEGRATION ---
             contentArea.innerHTML = `
-                <div style="text-align:center; padding: 4rem 2rem;">
-                    <i class="fas fa-users" style="font-size: 3rem; color: var(--secondary); margin-bottom: 1rem;"></i>
-                    <h3>Community Feed</h3>
-                    <p style="color:var(--gray)">Read latest health blogs and community posts.</p>
-                    <button class="list-btn btn-book" style="margin-top:1rem;">Explore Articles</button>
+                <div class="create-post-card">
+                    <h3 style="margin-bottom:15px;">Ask the Community</h3>
+                    <div class="cp-input-area">
+                        <textarea id="postContent" placeholder="What health question is on your mind?"></textarea>
+                    </div>
+                    <div style="text-align:right; margin-top:10px;">
+                        <button class="list-btn btn-book" onclick="submitPost()">Post Question</button>
+                    </div>
+                </div>
+                <div id="feedContainer">
+                    <div style="text-align:center; padding:40px; color:gray;"><i class="fas fa-spinner fa-spin"></i> Loading posts...</div>
                 </div>
             `;
+            listenToPosts();
+
         } else if (tabName === 'notifications') {
-            contentArea.innerHTML = `
-                <div class="section-title">Notifications</div>
-                <div id="notificationList">Loading...</div>
-            `;
+            contentArea.innerHTML = `<div class="section-title">Notifications</div><div id="notificationList">Loading...</div>`;
             loadNotifications();
         }
     }
 
-    // --- NEW: NOTIFICATION LOGIC ---
-    function loadNotifications() {
-        const list = document.getElementById('notificationList');
-        list.innerHTML = '';
-        
-        // Simple logic: If patient, show appointment status updates.
-        // If doctor, show pending requests.
-        
-        if (currentUserData.role === 'patient') {
-             db.collection('appointments')
-                .where('patientId', '==', currentUserData.uid)
-                .orderBy('requestDate', 'desc')
-                .limit(5)
-                .get().then(snap => {
-                    if(snap.empty) { list.innerHTML = '<p style="color:gray">No notifications.</p>'; return; }
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        let icon = data.status === 'accepted' ? '<i class="fas fa-check-circle" style="color:green"></i>' : '<i class="fas fa-clock" style="color:orange"></i>';
-                        let msg = data.status === 'accepted' ? `Dr. ${data.doctorName} approved your appointment.` : `Request sent to Dr. ${data.doctorName}.`;
-                        
-                        list.innerHTML += `
-                            <div class="list-item" style="border-left:4px solid ${data.status === 'accepted' ? 'green' : 'orange'}">
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    ${icon}
-                                    <span>${msg}</span>
-                                </div>
-                            </div>
-                        `;
-                    });
-                });
-        } else if (currentUserData.role === 'doctor') {
-             db.collection('appointments')
-                .where('doctorId', '==', currentUserData.uid)
-                .where('status', '==', 'pending')
-                .get().then(snap => {
-                    if(snap.empty) { list.innerHTML = '<p style="color:gray">No new notifications.</p>'; return; }
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        list.innerHTML += `
-                            <div class="list-item">
-                                <div><strong>New Request</strong><br>Patient: ${data.patientName}</div>
-                                <button class="list-btn btn-view" onclick="openAppointmentList('pending')">View</button>
-                            </div>
-                        `;
-                    });
-                });
-        } else {
-            list.innerHTML = '<p>No notifications.</p>';
-        }
+    // --- COMMUNITY FUNCTIONS (NEW) ---
+    function submitPost() {
+        const content = document.getElementById('postContent').value.trim();
+        if (!content) { showToast("Please write something!"); return; }
+
+        db.collection('posts').add({
+            authorName: currentUserData.name,
+            authorRole: currentUserData.role,
+            authorId: currentUserData.uid,
+            content: content,
+            type: 'question',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            likes: [], comments: []
+        }).then(() => {
+            document.getElementById('postContent').value = '';
+            showToast("Posted successfully!");
+        });
     }
 
-    // --- NEW: TOAST HELPER (Replace Alerts) ---
+    function listenToPosts() {
+        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snapshot => {
+            const feed = document.getElementById('feedContainer');
+            if(!feed) return; // Tab switched away
+            feed.innerHTML = '';
+
+            if(snapshot.empty) { feed.innerHTML = '<p style="text-align:center; color:gray">No posts yet.</p>'; return; }
+
+            snapshot.forEach(doc => {
+                const post = doc.data();
+                const isLiked = post.likes && post.likes.includes(currentUserData.uid);
+                const likeCount = post.likes ? post.likes.length : 0;
+                let badgeClass = post.authorRole === 'doctor' ? 'role-doctor' : 'role-patient';
+
+                const div = document.createElement('div');
+                div.className = 'post-card';
+                div.innerHTML = `
+                    <div class="post-header">
+                        <div>
+                            <strong>${post.authorName}</strong> <span class="role-badge ${badgeClass}">${post.authorRole.toUpperCase()}</span><br>
+                            <small style="color:gray">${new Date(post.timestamp?.toDate()).toLocaleDateString() || 'Just now'}</small>
+                        </div>
+                    </div>
+                    <p>${post.content}</p>
+                    <div class="interaction-bar">
+                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${doc.id}', ${isLiked})">
+                            <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i> ${likeCount}
+                        </button>
+                        <button class="action-btn" onclick="toggleComments('${doc.id}')">
+                            <i class="far fa-comment"></i> ${post.comments ? post.comments.length : 0} Comments
+                        </button>
+                    </div>
+                    <div id="comments-${doc.id}" class="comments-section">
+                        <div class="comment-input-box">
+                            <input type="text" id="input-${doc.id}" placeholder="Write a comment...">
+                            <button class="list-btn btn-book" onclick="submitComment('${doc.id}')">Send</button>
+                        </div>
+                        <div id="list-${doc.id}">${renderComments(post.comments)}</div>
+                    </div>
+                `;
+                feed.appendChild(div);
+            });
+        });
+    }
+
+    function toggleLike(postId, isLiked) {
+        const postRef = db.collection('posts').doc(postId);
+        const action = isLiked ? firebase.firestore.FieldValue.arrayRemove(currentUserData.uid) : firebase.firestore.FieldValue.arrayUnion(currentUserData.uid);
+        postRef.update({ likes: action });
+    }
+
+    function toggleComments(postId) {
+        const el = document.getElementById(`comments-${postId}`);
+        if(el) el.classList.toggle('open');
+    }
+
+    function submitComment(postId) {
+        const input = document.getElementById(`input-${postId}`);
+        if(!input.value.trim()) return;
+        db.collection('posts').doc(postId).update({
+            comments: firebase.firestore.FieldValue.arrayUnion({
+                text: input.value.trim(),
+                author: currentUserData.name,
+                role: currentUserData.role
+            })
+        }).then(() => input.value = '');
+    }
+
+    function renderComments(comments) {
+        if(!comments || comments.length === 0) return '<small style="color:gray">No comments yet.</small>';
+        return comments.map(c => `
+            <div style="border-bottom:1px solid #eee; padding:5px 0; font-size:0.9rem;">
+                <span style="font-weight:600; color:${c.role==='doctor'?'var(--secondary)':'#000'}">${c.author}:</span> ${c.text}
+            </div>
+        `).join('');
+    }
+
+    // --- STANDARD MODALS (Upload, Search, etc.) ---
+    function closeModal() { modal.classList.remove('active'); }
     function showToast(msg) {
         const box = document.getElementById('toast-box');
         document.getElementById('toast-msg').innerText = msg;
         box.classList.add('show');
         setTimeout(() => box.classList.remove('show'), 3000);
     }
+    
+    // --- UPLOAD REPORT ---
+    function openUploadModal() {
+        modalContent.innerHTML = `
+            <h2>Upload Document</h2>
+            <div class="modal-form">
+                <label>Type</label><select id="reportType"><option>X-Ray</option><option>ECG</option><option>Lab Test</option></select>
+                <input type="file" id="reportFile" accept="image/*,.pdf" style="margin-top:10px;">
+                <button class="list-btn btn-book" style="width:100%; margin-top:10px;" onclick="submitReport()">Submit</button>
+            </div>`;
+        modal.classList.add('active');
+    }
+    function submitReport() {
+        const file = document.getElementById('reportFile').files[0];
+        if(!file) { showToast("Select a file first."); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            db.collection('reports').add({
+                patientId: currentUserData.uid, patientName: currentUserData.name,
+                reportType: document.getElementById('reportType').value, fileData: e.target.result,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => { showToast("Uploaded!"); closeModal(); });
+        };
+        reader.readAsDataURL(file);
+    }
 
+    // --- FIND DOCTOR ---
+    function openFindDoctorModal() {
+        modalContent.innerHTML = `<h2>Doctors</h2><div id="docList">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('users').where('role', '==', 'doctor').get().then(snap => {
+            const list = document.getElementById('docList'); list.innerHTML = '';
+            if(snap.empty) list.innerHTML = '<p>No doctors found.</p>';
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `<div class="list-item"><span>${d.name}</span><button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button></div>`;
+            });
+        });
+    }
+    function bookApt(docId, docName) {
+        if(!confirm("Book appointment?")) return;
+        db.collection('appointments').add({
+            patientId: currentUserData.uid, patientName: currentUserData.name,
+            doctorId: docId, doctorName: docName, status: 'pending', requestDate: new Date().toISOString()
+        }).then(() => { showToast("Request Sent!"); closeModal(); });
+    }
+
+    // --- VIEW SCHEDULE ---
+    function openPatientSchedule() {
+        modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('appointments').where('patientId','==',currentUserData.uid).where('status','==','accepted').get().then(snap => {
+            const l = document.getElementById('schedList'); l.innerHTML = '';
+            if(snap.empty) l.innerHTML = '<p>No confirmed appointments.</p>';
+            snap.forEach(doc => {
+                const d = doc.data();
+                l.innerHTML += `<div class="list-item"><span>Dr. ${d.doctorName}</span><span style="color:blue">${d.scheduledTime || 'Time pending'}</span></div>`;
+            });
+        });
+    }
+
+    // --- MY REPORTS ---
+    function openMyReports() {
+        modalContent.innerHTML = `<h2>My Reports</h2><div id="repList">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('reports').where('patientId','==',currentUserData.uid).get().then(snap => {
+            const l = document.getElementById('repList'); l.innerHTML = '';
+            if(snap.empty) l.innerHTML = '<p>No reports.</p>';
+            snap.forEach(doc => {
+                const d = doc.data();
+                l.innerHTML += `<div class="list-item"><span>${d.reportType}</span><button class="list-btn btn-view" onclick="window.open('${d.fileData}')">View</button></div>`;
+            });
+        });
+    }
+
+    // --- DOCTOR: APPOINTMENTS ---
+    function openAppointmentList(status) {
+        modalContent.innerHTML = `<h2>${status}</h2><div id="alist">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('appointments').where('doctorId','==',currentUserData.uid).where('status','==',status).get().then(snap => {
+            const l = document.getElementById('alist'); l.innerHTML = '';
+            if(snap.empty) l.innerHTML = '<p>None found.</p>';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const btns = status === 'pending' ? 
+                    `<button class="list-btn btn-accept" onclick="updApt('${doc.id}','accepted')">Accept</button>` :
+                    `<button class="list-btn btn-cancel" onclick="updApt('${doc.id}','cancelled')">Cancel</button>`;
+                l.innerHTML += `<div class="list-item"><span>${d.patientName}</span><div>${btns}</div></div>`;
+            });
+        });
+    }
+    function updApt(id, st) {
+        db.collection('appointments').doc(id).update({status:st}).then(() => { showToast("Updated"); closeModal(); });
+    }
+
+    // --- PATIENT SEARCH ---
+    function openPatientSearch() {
+        modalContent.innerHTML = `<h2>Search Patient</h2><input type="text" id="pSearch" placeholder="Name" onchange="runSearch()"><div id="pRes"></div>`;
+        modal.classList.add('active');
+    }
+    function runSearch() {
+        const q = document.getElementById('pSearch').value.toLowerCase();
+        db.collection('users').where('role','==','patient').get().then(snap => {
+            const r = document.getElementById('pRes'); r.innerHTML = '';
+            snap.forEach(doc => {
+                if(doc.data().name.toLowerCase().includes(q)) {
+                    r.innerHTML += `<div class="list-item"><span>${doc.data().name}</span><button class="list-btn btn-view">View</button></div>`;
+                }
+            });
+        });
+    }
+
+    // --- UTILS ---
+    async function syncUserWithDB() {
+        const snap = await db.collection('users').doc(currentUserData.uid).get();
+        if(!snap.exists) db.collection('users').doc(currentUserData.uid).set({name:currentUserData.name, role:currentUserData.role}, {merge:true});
+    }
+    function logout() {
+        auth.signOut().then(() => { localStorage.setItem('isLoggedIn','false'); window.location.href = 'index.html'; });
+    }
+    function loadNotifications() {
+        document.getElementById('notificationList').innerHTML = '<p style="color:gray">No new notifications.</p>';
+    }
     </script>
 </body>
 </html>
