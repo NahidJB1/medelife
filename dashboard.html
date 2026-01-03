@@ -140,6 +140,7 @@
         .btn-view { background: #4F46E5; color: white; }
         .btn-accept { background: var(--secondary); color: white; margin-right: 5px;}
         .btn-decline { background: var(--primary); color: white; }
+        .btn-cancel { background: #9CA3AF; color: white; margin-left: 5px; } /* NEW STYLE */
 
         /* Form Elements */
         .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
@@ -236,7 +237,6 @@
         const role = localStorage.getItem('userRole') || 'patient';
         const name = localStorage.getItem('userName') || 'User';
 
-        // [CRITICAL FIX] Ensure ID stays the same across reloads
         let storedUid = localStorage.getItem('userUid');
         if (!storedUid) {
             storedUid = 'user_' + Math.floor(Math.random() * 1000000);
@@ -249,9 +249,6 @@
             uid: storedUid
         };
 
-        // Debug Log
-        console.log("Logged in as:", currentUserData); 
-
         // UI Header
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
@@ -259,7 +256,6 @@
         document.getElementById('sideName').innerText = name;
         document.getElementById('sideRole').innerText = role.toUpperCase();
 
-        // Load Avatar
         const savedJSON = localStorage.getItem('userProfileData');
         if (savedJSON) {
             const data = JSON.parse(savedJSON);
@@ -422,7 +418,7 @@
         };
     }
 
-    // --- B. PATIENT: MY REPORTS ---
+    // --- B. PATIENT: MY REPORTS (ADDED VIEW BUTTON) ---
     function openMyReports() {
         modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
         modal.classList.add('active');
@@ -448,12 +444,17 @@
                     const data = doc.data();
                     const div = document.createElement('div');
                     div.className = 'list-item';
+                    
+                    // NEW: Added View Button logic
                     div.innerHTML = `
                         <div>
                             <strong>${data.reportType}</strong><br>
                             <small>${new Date().toLocaleDateString()}</small>
                         </div>
-                        <a href="${data.fileData}" download="Report" class="list-btn btn-view" style="text-decoration:none; text-align:center;">Download</a>
+                        <div>
+                            <button class="list-btn btn-view" onclick="window.open('${data.fileData}', '_blank')">View</button>
+                            <a href="${data.fileData}" download="Report" class="list-btn btn-book" style="text-decoration:none; margin-left:5px;">Download</a>
+                        </div>
                     `;
                     list.appendChild(div);
                 });
@@ -463,7 +464,7 @@
             });
     }
 
-    // --- C. PATIENT: FIND DOCTOR ---
+    // --- C. PATIENT: FIND DOCTOR (ADDED CANCEL) ---
     function openFindDoctorModal() {
         modalContent.innerHTML = `
             <h2>Find a Specialist</h2>
@@ -476,7 +477,7 @@
     async function loadDoctors() {
         const container = document.getElementById('doctorListContainer');
         
-        // 1. Get ONLY Real Doctors
+        // 1. Get Real Doctors
         let realDoctors = [];
         try {
             const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
@@ -486,13 +487,14 @@
             return;
         }
 
-        // 2. Get My Existing Appointments
+        // 2. Get My Existing Appointments (UPDATED TO STORE ID)
         let myApts = {};
         try {
             const aptSnap = await db.collection('appointments').where('patientId', '==', currentUserData.uid).get();
             aptSnap.forEach(doc => {
                 const data = doc.data();
-                myApts[data.doctorId] = data.status;
+                // Store Object instead of just status, so we can access Appointment ID later
+                myApts[data.doctorId] = { status: data.status, aptId: doc.id };
             });
         } catch (e) { console.log(e); }
 
@@ -510,13 +512,23 @@
             const displayName = doc.name || "Unknown Doctor";
             const specialty = doc.special || "Specialist";
             
-            let btnHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
+            // Default: Show Book Button
+            let actionHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
             
             if (myApts[doc.id]) {
-                const status = myApts[doc.id];
-                let color = status === 'accepted' ? 'var(--secondary)' : '#F59E0B';
-                let label = status === 'accepted' ? 'Approved' : 'Requested';
-                btnHtml = `<button class="list-btn" style="background:${color}; color:white; cursor:default">${label}</button>`;
+                const aptInfo = myApts[doc.id];
+                const status = aptInfo.status;
+
+                if(status === 'accepted') {
+                    // Approved: Show Green Button (No Cancel)
+                    actionHtml = `<button class="list-btn" style="background:var(--secondary); color:white; cursor:default">Approved</button>`;
+                } else if (status === 'pending') {
+                    // Pending: Show "Requested" + "Cancel" Button
+                    actionHtml = `
+                        <button class="list-btn" style="background:#F59E0B; color:white; cursor:default">Requested</button>
+                        <button class="list-btn btn-cancel" onclick="cancelAppointment('${aptInfo.aptId}')">Cancel</button>
+                    `;
+                }
             }
             
             const div = document.createElement('div');
@@ -526,7 +538,7 @@
                     <strong>${displayName}</strong><br>
                     <small style="color:gray">${specialty}</small>
                 </div>
-                ${btnHtml}
+                <div>${actionHtml}</div>
             `;
             container.appendChild(div);
         });
@@ -542,12 +554,19 @@
                 status: 'pending',
                 requestDate: new Date().toISOString()
             }).then(() => {
-                const btn = document.getElementById(`btn-${docId}`);
-                if (btn) {
-                    btn.innerText = "Requested";
-                    btn.style.background = "#F59E0B";
-                    btn.onclick = null;
-                }
+                alert("Appointment Requested!");
+                loadDoctors(); // Reload to show updated status
+            });
+        }
+    }
+
+    // NEW: CANCEL FUNCTION
+    function cancelAppointment(aptId) {
+        if(confirm("Are you sure you want to cancel this request?")) {
+            db.collection('appointments').doc(aptId).delete()
+            .then(() => {
+                alert("Appointment Cancelled.");
+                loadDoctors(); // Reload list to show 'Book' button again
             });
         }
     }
@@ -563,11 +582,13 @@
             .then(snap => {
                 const list = document.getElementById('aptList');
                 list.innerHTML = '';
-                if (snap.empty) { list.innerHTML = '<p>No pending appointments.</p>'; return; }
-
+                
+                // Filter locally for pending
+                let hasPending = false;
                 snap.forEach(doc => {
                     const data = doc.data();
                     if(data.status !== 'pending') return; 
+                    hasPending = true;
 
                     const div = document.createElement('div');
                     div.className = 'list-item';
@@ -583,7 +604,8 @@
                     `;
                     list.appendChild(div);
                 });
-                if(list.innerHTML === '') list.innerHTML = '<p>No pending appointments.</p>';
+                
+                if(!hasPending) list.innerHTML = '<p>No pending appointments.</p>';
             });
     }
 
@@ -666,7 +688,10 @@
                 container.innerHTML += `
                     <div class="list-item">
                         <span>${data.reportType}</span>
-                        <a href="${data.fileData}" download="Report" class="list-btn btn-view">Download</a>
+                        <div>
+                             <button class="list-btn btn-view" onclick="window.open('${data.fileData}', '_blank')">View</button>
+                             <a href="${data.fileData}" download="Report" class="list-btn btn-book">Download</a>
+                        </div>
                     </div>`;
             });
         });
