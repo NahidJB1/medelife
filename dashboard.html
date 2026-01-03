@@ -160,6 +160,85 @@
             .sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
         }
+
+        /* --- NEW MODERN HERO BARS --- */
+.hero-bar-container {
+    background: white;
+    padding: 1.2rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08); /* Soft Modern Shadow */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    border: 1px solid #F3F4F6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover Effect: Lift and glow */
+.hero-bar-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 30px -10px rgba(239, 68, 68, 0.15); /* Primary Color Glow */
+    border-color: #FEE2E2;
+}
+
+/* Left side: Icon and Text */
+.hb-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.hb-icon-circle {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: #FEF2F2; /* Light Red bg */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--primary);
+    transition: 0.3s;
+}
+.hero-bar-container:hover .hb-icon-circle {
+    background: var(--primary);
+    color: white;
+    transform: rotate(-10deg);
+}
+
+.hb-text h4 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+.hb-text p { font-size: 0.85rem; color: var(--gray); font-weight: 400; }
+
+/* Right side: Action Button simulation */
+.hb-action {
+    background: var(--dark);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+/* Green Variation for Search (Doctor/Pharmacy) */
+.hb-search .hb-icon-circle { background: #DCFCE7; color: var(--secondary); }
+.hb-search:hover { box-shadow: 0 20px 30px -10px rgba(34, 197, 94, 0.15); border-color: #DCFCE7; }
+.hb-search:hover .hb-icon-circle { background: var(--secondary); color: white; transform: scale(1.1); }
+
+/* Mobile Response */
+@media (max-width: 600px) {
+    .hero-bar-container { flex-direction: column; text-align: center; gap: 15px; }
+    .hb-content { flex-direction: column; }
+    .hb-action { width: 100%; justify-content: center; }
+}
+
+
     </style>
 </head>
 <body>
@@ -194,6 +273,78 @@
                 <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </header>
+
+        <main class="main-content">
+        <header>
+            </header>
+        
+        <div id="heroSection"></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+        ```
+
+---
+
+### **3. Update JavaScript Logic**
+
+Update your `renderPatientView`, `renderDoctorView`, and `renderPharmacyView` functions to inject the new bar design into the `#heroSection`.
+
+**Replace/Update these 3 functions in your script:**
+
+#### **A. Update `renderPatientView`**
+*Adds the modern "Upload Report" bar.*
+
+```javascript
+function renderPatientView() {
+    // 1. Sidebar
+    document.getElementById('sidebarNav').innerHTML = `
+        <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
+        <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
+        <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
+    `;
+
+    // 2. NEW: Hero Bar (Upload Report)
+    document.getElementById('heroSection').innerHTML = `
+        <div class="hero-bar-container" onclick="openUploadModal()">
+            <div class="hb-content">
+                <div class="hb-icon-circle"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="hb-text">
+                    <h4>Upload Medical Report</h4>
+                    <p>Securely store your X-Rays, Lab Reports, and Prescriptions.</p>
+                </div>
+            </div>
+            <div class="hb-action">
+                Upload Now <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
+    `;
+
+    // 3. Stats (Standard)
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card">
+            <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
+            <div class="stat-info"><h3>Healthy</h3><p>Status</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="icon-box icon-doc"><i class="fas fa-file-medical-alt"></i></div>
+            <div class="stat-info"><h3>Check</h3><p>My Reports</p></div>
+        </div>
+    `;
+
+    // 4. Quick Actions (Removed old 'Upload' card to avoid duplicates)
+    document.getElementById('actionGrid').innerHTML = `
+        <div class="action-card" onclick="openFindDoctorModal()">
+            <i class="fas fa-user-md"></i>
+            <h4>Find Doctors</h4>
+            <p>Book Appointment</p>
+        </div>
+        <div class="action-card" onclick="openMyReports()">
+            <i class="fas fa-file-medical-alt"></i>
+            <h4>My Reports</h4>
+            <p>View History</p>
+        </div>
+    `;
+}
 
         <div class="stats-grid" id="statsGrid"></div>
 
@@ -761,7 +912,7 @@
         // Fetch History from Database
         db.collection('prescriptions')
             .where('patientId', '==', patientId)
-            //.orderBy('timestamp', 'desc')
+            .orderBy('timestamp', 'desc')
             .get()
             .then(snap => {
                 const hist = document.getElementById('rxHistory');
