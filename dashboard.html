@@ -230,7 +230,7 @@
         initDashboard();
     });
 
-    function initDashboard() {
+    ffunction initDashboard() {
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         if (!isLoggedIn) { window.location.href = 'index.html'; return; }
 
@@ -262,15 +262,13 @@
             if (data.photo) document.getElementById('sideAvatar').src = data.photo;
         }
 
+        // --- NEW: SYNC ID WITH DB ---
+        syncUserWithDB(); 
+
         // ROUTING
         if (role === 'doctor') renderDoctorView();
         else if (role === 'pharmacy') renderPharmacyView();
         else renderPatientView();
-    }
-
-    function logout() {
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = 'index.html';
     }
 
     // --- 2. PATIENT VIEW ---
@@ -419,6 +417,7 @@
     }
 
     // --- B. PATIENT: MY REPORTS (ADDED VIEW BUTTON) ---
+// --- B. PATIENT: MY REPORTS (FIXED VIEW) ---
     function openMyReports() {
         modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
         modal.classList.add('active');
@@ -435,7 +434,6 @@
                     <div style="text-align:center; color:gray; padding:20px;">
                         <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:10px;"></i>
                         <p>No reports found.</p>
-                        <small>Uploaded files will appear here.</small>
                     </div>`;
                     return;
                 }
@@ -445,14 +443,14 @@
                     const div = document.createElement('div');
                     div.className = 'list-item';
                     
-                    // NEW: Added View Button logic
+                    // --- FIX: Button calls openReportInNewWindow ---
                     div.innerHTML = `
                         <div>
                             <strong>${data.reportType}</strong><br>
                             <small>${new Date().toLocaleDateString()}</small>
                         </div>
                         <div>
-                            <button class="list-btn btn-view" onclick="window.open('${data.fileData}', '_blank')">View</button>
+                            <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View</button>
                             <a href="${data.fileData}" download="Report" class="list-btn btn-book" style="text-decoration:none; margin-left:5px;">Download</a>
                         </div>
                     `;
@@ -680,20 +678,26 @@
         const container = document.getElementById('patientDetailContent');
         container.innerHTML = 'Loading Reports...';
         
-        db.collection('reports').where('patientId', '==', patientId).get().then(snap => {
+        db.collection('reports').where('patientId', '==', patientId).get()
+        .then(snap => {
             container.innerHTML = '';
             if (snap.empty) { container.innerHTML = '<p>No reports found for this patient.</p>'; return; }
+            
             snap.forEach(doc => {
                 const data = doc.data();
+                // --- FIX: Button calls openReportInNewWindow ---
                 container.innerHTML += `
                     <div class="list-item">
                         <span>${data.reportType}</span>
                         <div>
-                             <button class="list-btn btn-view" onclick="window.open('${data.fileData}', '_blank')">View</button>
+                             <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View</button>
                              <a href="${data.fileData}" download="Report" class="list-btn btn-book">Download</a>
                         </div>
                     </div>`;
             });
+        })
+        .catch(err => {
+            container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
         });
     }
 
@@ -778,6 +782,49 @@
             .catch(err => {
                  document.getElementById('pharmRxList').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             });
+    }
+
+    // --- H. NEW UTILITY FUNCTIONS (FIXES) ---
+
+    // 1. FIX BLANK TAB: Opens Base64 data in a clean iframe window
+    function openReportInNewWindow(base64Data) {
+        const win = window.open();
+        if (win) {
+            win.document.write('<iframe src="' + base64Data + '" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>');
+        } else {
+            alert("Please allow popups to view the report.");
+        }
+    }
+
+    // 2. FIX APPOINTMENT ID: Ensures you log in as the existing Doctor/Patient from DB
+    async function syncUserWithDB() {
+        console.log("Syncing user identity...");
+        // Check if this user (Name + Role) already exists in DB
+        const snap = await db.collection('users')
+            .where('name', '==', currentUserData.name)
+            .where('role', '==', currentUserData.role)
+            .get();
+
+        if (!snap.empty) {
+            // User exists! Use their REAL ID (fixes the booking mismatch)
+            const doc = snap.docs[0];
+            if (doc.id !== currentUserData.uid) {
+                console.log("ID Mismatch. Switching to:", doc.id);
+                currentUserData.uid = doc.id;
+                localStorage.setItem('userUid', doc.id); // Save correct ID
+            }
+        } else {
+            // New User? Create them in DB now so they can be found
+            db.collection('users').doc(currentUserData.uid).set({
+                name: currentUserData.name,
+                role: currentUserData.role,
+                special: 'General',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // Refresh UI components that depend on ID
+        if(currentUserData.role === 'doctor') openAppointmentList();
     }
     </script>
 </body>
