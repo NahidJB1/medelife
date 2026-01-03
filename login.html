@@ -313,63 +313,70 @@
             }
         }
 
-        // --- 2. REGISTRATION LOGIC ---
         function handleRegister(event) {
-            event.preventDefault(); // Stop page reload immediately
+            event.preventDefault(); 
 
             const btn = document.getElementById('btnRegister');
             const originalText = btn.innerText;
             const emailInput = document.getElementById('regEmail');
             const passwordInput = document.getElementById('regPassword');
             const emailErrorMsg = document.getElementById('emailErrorMsg');
+            
+            // Capture values
+            const nameVal = document.getElementById('regName').value;
+            const roleVal = document.getElementById('regRole').value;
+            const emailVal = emailInput.value;
 
-            // 1. DISABLE BUTTON IMMEDIATELY (Prevents double clicks/errors)
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
-            // 2. Client-Side Validation
             if (!validateInputs()) {
-                // If invalid, re-enable button and stop
                 btn.disabled = false;
                 btn.innerText = originalText;
                 return;
             }
 
-            // 3. Attempt Firebase Creation
-            // We assume 'firebase' is available from your script tags
             if (typeof firebase !== 'undefined') {
-                firebase.auth().createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+                firebase.auth().createUserWithEmailAndPassword(emailVal, passwordInput.value)
                 .then((userCredential) => {
-        // --- SUCCESS ---
-        
-        // <--- ADD THESE 3 LINES HERE --->
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userName', document.getElementById('regName').value);
-        localStorage.setItem('userRole', document.getElementById('regRole').value);
-        // <--- END ADD --->
+                    // --- 1. SAVE TO DATABASE (FIRESTORE) ---
+                    const db = firebase.firestore();
+                    return db.collection("users").doc(userCredential.user.uid).set({
+                        name: nameVal,
+                        role: roleVal,
+                        email: emailVal,
+                        createdAt: new Date()
+                    })
+                    .then(() => {
+                        // --- 2. UPDATE LOCAL STORAGE ---
+                        // Only now do we set the local storage for the current session
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userName', nameVal);
+                        localStorage.setItem('userRole', roleVal);
 
-        showSuccessAnimation();
-                    // Optional: Save other user details to Firestore here
+                        // --- 3. DEMO BACKUP (For local testing without Firebase) ---
+                        // We save a "fake database" entry in localStorage just in case
+                        localStorage.setItem('db_user_' + emailVal, JSON.stringify({ role: roleVal, name: nameVal }));
+
+                        showSuccessAnimation();
+                    });
                 })
                 .catch((error) => {
-                    // --- ERROR HANDLING ---
                     btn.disabled = false;
                     btn.innerText = originalText;
-                    
                     if (error.code === 'auth/email-already-in-use') {
-                        // Custom nice error on the input, NOT an alert
                         emailInput.classList.add('error');
-                        emailErrorMsg.innerText = "This email is already registered. Try logging in.";
+                        emailErrorMsg.innerText = "This email is already registered.";
                         emailErrorMsg.style.display = "block";
-                    } else if (error.code === 'auth/weak-password') {
-                        alert("Password is too weak. Please use a stronger password.");
                     } else {
-                        console.error(error);
                         alert("Error: " + error.message);
                     }
                 });
             } else {
-                // Fallback if Firebase isn't loaded (For Demo purposes)
+                // FALLBACK IF FIREBASE NOT LOADED
+                // We simulate saving to a DB by using a specific key for this email
+                localStorage.setItem('db_user_' + emailVal, JSON.stringify({ role: roleVal, name: nameVal }));
+                
                 setTimeout(() => { showSuccessAnimation(); }, 1500);
             }
         }
@@ -424,48 +431,77 @@
         }
         function clearError(inputElement) { inputElement.style.borderColor = "transparent"; document.getElementById('emailErrorMsg').style.display = 'none'; }
         
-        // --- LOGIN HANDLER (FIXED) ---
         function handleLogin(event) {
-    event.preventDefault();
-    const btn = document.getElementById('btnSignIn');
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+            event.preventDefault();
+            const btn = document.getElementById('btnSignIn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
 
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
-    if (typeof firebase !== 'undefined') {
-        firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // --- SUCCESS ---
-            localStorage.setItem('isLoggedIn', 'true');
+            if (typeof firebase !== 'undefined') {
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // --- 1. GET USER ID ---
+                    const uid = userCredential.user.uid;
+                    const db = firebase.firestore();
+
+                    // --- 2. FETCH ROLE FROM DATABASE ---
+                    db.collection("users").doc(uid).get().then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            
+                            // --- 3. OVERWRITE STALE DATA ---
+                            // This ensures the dashboard sees the CORRECT role for THIS user
+                            localStorage.setItem('isLoggedIn', 'true');
+                            localStorage.setItem('userName', userData.name);
+                            localStorage.setItem('userRole', userData.role); 
+                            
+                            window.location.href = "dashboard.html"; 
+                        } else {
+                            // Fallback: User exists in Auth but not in DB (Old accounts?)
+                            console.log("User data not found, checking local backup...");
+                            checkLocalBackupAndRedirect(email);
+                        }
+                    }).catch((error) => {
+                        console.error("Error getting document:", error);
+                        // If DB fails, try to let them in anyway
+                        checkLocalBackupAndRedirect(email);
+                    });
+                })
+                .catch((error) => {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    alert("Login Failed: " + error.message);
+                });
+            } else {
+                // DEMO MODE: Check our fake local DB
+                setTimeout(() => { 
+                    checkLocalBackupAndRedirect(email);
+                }, 1500);
+            }
+        }
+
+        // --- HELPER FOR DEMO/FALLBACK LOGIN ---
+        function checkLocalBackupAndRedirect(email) {
+            // Check if we have a saved record for this SPECIFIC email
+            const savedData = localStorage.getItem('db_user_' + email);
             
-            // Save Name if missing
-            if(!localStorage.getItem('userName')) {
-                localStorage.setItem('userName', email.split('@')[0]);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('userRole', data.role); // <--- Sets the correct role!
+            } else {
+                // If we know nothing about them, we just let them in as patient (default)
+                localStorage.setItem('isLoggedIn', 'true');
+                // Don't overwrite role if it's not there, or default to patient
+                if(!localStorage.getItem('userRole')) localStorage.setItem('userRole', 'patient');
             }
-
-            // --- UPDATE: Redirect to Dashboard ---
-            window.location.href = "dashboard.html"; 
-        })
-        .catch((error) => {
-            btn.disabled = false;
-            btn.innerText = originalText;
-            alert("Login Failed: " + error.message);
-        });
-    } else {
-        // --- DEMO FALLBACK ---
-        setTimeout(() => { 
-            localStorage.setItem('isLoggedIn', 'true');
-            if(!localStorage.getItem('userName')) {
-                localStorage.setItem('userName', email.split('@')[0]);
-            }
-            // --- UPDATE: Redirect to Dashboard ---
-            window.location.href = "dashboard.html"; 
-        }, 1500);
-    }
-}
+            window.location.href = "dashboard.html";
+        }
     </script>
 </body>
 </html>s
