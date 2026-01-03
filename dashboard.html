@@ -230,7 +230,7 @@
         initDashboard();
     });
 
-    ffunction initDashboard() {
+    function initDashboard() {
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         if (!isLoggedIn) { window.location.href = 'index.html'; return; }
 
@@ -263,7 +263,7 @@
         }
 
         // --- NEW: SYNC ID WITH DB ---
-        syncUserWithDB(); 
+        await syncUserWithDB();
 
         // ROUTING
         if (role === 'doctor') renderDoctorView();
@@ -825,6 +825,16 @@
         
         // Refresh UI components that depend on ID
         if(currentUserData.role === 'doctor') openAppointmentList();
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.setItem('isLoggedIn', 'false');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userUid'); // Clear the ID on logout
+            window.location.href = 'index.html';
+        });
     }
     </script>
 </body>
