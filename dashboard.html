@@ -122,6 +122,7 @@
         .close-modal {
             position: absolute; top: 15px; right: 20px; font-size: 1.5rem;
             cursor: pointer; color: var(--gray);
+            z-index: 10;
         }
         
         /* List Items */
@@ -140,14 +141,73 @@
         .btn-view { background: #4F46E5; color: white; }
         .btn-accept { background: var(--secondary); color: white; margin-right: 5px;}
         .btn-decline { background: var(--primary); color: white; }
-        .btn-cancel { background: #9CA3AF; color: white; margin-left: 5px; } /* NEW STYLE */
+        .btn-cancel { background: #9CA3AF; color: white; margin-left: 5px; }
 
-        /* Form Elements */
+        /* Form Elements & New Redesigned Bars */
         .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
-        .modal-form select, .modal-form input, .modal-form textarea {
-            width: 100%; padding: 10px; border: 1px solid #E5E7EB; 
-            border-radius: 8px; margin-bottom: 15px;
+        .modal-form select, .modal-form input:not([type="file"]), .modal-form textarea {
+            width: 100%; padding: 12px; border: 1px solid #E5E7EB; 
+            border-radius: 12px; margin-bottom: 15px; outline: none;
+            font-family: 'Poppins', sans-serif;
         }
+        .modal-form input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
+
+        /* --- REDESIGN: Modern Upload Area (Patient) --- */
+        .modern-upload-box {
+            border: 2px dashed #E5E7EB; border-radius: 16px;
+            padding: 40px 20px; text-align: center;
+            background: #F9FAFB; cursor: pointer;
+            transition: all 0.3s ease; position: relative;
+            margin-bottom: 20px;
+        }
+        .modern-upload-box:hover {
+            border-color: var(--primary); background: #FEF2F2;
+        }
+        .modern-upload-box i {
+            font-size: 3rem; color: #9CA3AF; margin-bottom: 15px; transition: 0.3s;
+        }
+        .modern-upload-box:hover i { color: var(--primary); transform: scale(1.1); }
+        .modern-upload-box p { font-weight: 500; color: #4B5563; }
+        .modern-upload-box small { color: #9CA3AF; display: block; margin-top: 5px; }
+        
+        /* The file input is hidden but covers the box */
+        .file-input-hidden {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+        .file-name-display {
+            display: inline-block; margin-top: 10px;
+            padding: 5px 12px; background: white; border-radius: 20px;
+            font-size: 0.85rem; color: var(--primary);
+            border: 1px solid #FEE2E2; font-weight: 600;
+        }
+
+        /* --- REDESIGN: Modern Search Bar (Doc/Pharmacy) --- */
+        .modern-search-bar {
+            position: relative; width: 100%; margin-bottom: 25px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 50px; background: white;
+            display: flex; align-items: center; padding: 5px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .modern-search-bar:focus-within {
+            border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.2);
+        }
+        .search-icon {
+            padding-left: 20px; color: #9CA3AF; font-size: 1.2rem;
+        }
+        .search-input-field {
+            flex: 1; border: none; padding: 15px;
+            font-size: 1rem; border-radius: 50px; outline: none;
+        }
+        .search-btn-modern {
+            background: var(--dark); color: white; border: none;
+            padding: 12px 25px; border-radius: 40px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+            margin-right: 5px;
+        }
+        .search-btn-modern:hover { background: var(--primary); transform: translateX(-2px); }
+
 
         /* Animations */
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -160,85 +220,6 @@
             .sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
         }
-
-        /* --- NEW MODERN HERO BARS --- */
-.hero-bar-container {
-    background: white;
-    padding: 1.2rem 2rem;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08); /* Soft Modern Shadow */
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 2.5rem;
-    border: 1px solid #F3F4F6;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Hover Effect: Lift and glow */
-.hero-bar-container:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 20px 30px -10px rgba(239, 68, 68, 0.15); /* Primary Color Glow */
-    border-color: #FEE2E2;
-}
-
-/* Left side: Icon and Text */
-.hb-content {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-.hb-icon-circle {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    background: #FEF2F2; /* Light Red bg */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    color: var(--primary);
-    transition: 0.3s;
-}
-.hero-bar-container:hover .hb-icon-circle {
-    background: var(--primary);
-    color: white;
-    transform: rotate(-10deg);
-}
-
-.hb-text h4 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
-.hb-text p { font-size: 0.85rem; color: var(--gray); font-weight: 400; }
-
-/* Right side: Action Button simulation */
-.hb-action {
-    background: var(--dark);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: 0.3s;
-}
-
-/* Green Variation for Search (Doctor/Pharmacy) */
-.hb-search .hb-icon-circle { background: #DCFCE7; color: var(--secondary); }
-.hb-search:hover { box-shadow: 0 20px 30px -10px rgba(34, 197, 94, 0.15); border-color: #DCFCE7; }
-.hb-search:hover .hb-icon-circle { background: var(--secondary); color: white; transform: scale(1.1); }
-
-/* Mobile Response */
-@media (max-width: 600px) {
-    .hero-bar-container { flex-direction: column; text-align: center; gap: 15px; }
-    .hb-content { flex-direction: column; }
-    .hb-action { width: 100%; justify-content: center; }
-}
-
-
     </style>
 </head>
 <body>
@@ -273,78 +254,6 @@
                 <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </header>
-
-        <main class="main-content">
-        <header>
-            </header>
-        
-        <div id="heroSection"></div>
-
-        <div class="stats-grid" id="statsGrid"></div>
-        ```
-
----
-
-### **3. Update JavaScript Logic**
-
-Update your `renderPatientView`, `renderDoctorView`, and `renderPharmacyView` functions to inject the new bar design into the `#heroSection`.
-
-**Replace/Update these 3 functions in your script:**
-
-#### **A. Update `renderPatientView`**
-*Adds the modern "Upload Report" bar.*
-
-```javascript
-function renderPatientView() {
-    // 1. Sidebar
-    document.getElementById('sidebarNav').innerHTML = `
-        <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
-        <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
-        <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
-    `;
-
-    // 2. NEW: Hero Bar (Upload Report)
-    document.getElementById('heroSection').innerHTML = `
-        <div class="hero-bar-container" onclick="openUploadModal()">
-            <div class="hb-content">
-                <div class="hb-icon-circle"><i class="fas fa-cloud-upload-alt"></i></div>
-                <div class="hb-text">
-                    <h4>Upload Medical Report</h4>
-                    <p>Securely store your X-Rays, Lab Reports, and Prescriptions.</p>
-                </div>
-            </div>
-            <div class="hb-action">
-                Upload Now <i class="fas fa-arrow-right"></i>
-            </div>
-        </div>
-    `;
-
-    // 3. Stats (Standard)
-    document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-card">
-            <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
-            <div class="stat-info"><h3>Healthy</h3><p>Status</p></div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box icon-doc"><i class="fas fa-file-medical-alt"></i></div>
-            <div class="stat-info"><h3>Check</h3><p>My Reports</p></div>
-        </div>
-    `;
-
-    // 4. Quick Actions (Removed old 'Upload' card to avoid duplicates)
-    document.getElementById('actionGrid').innerHTML = `
-        <div class="action-card" onclick="openFindDoctorModal()">
-            <i class="fas fa-user-md"></i>
-            <h4>Find Doctors</h4>
-            <p>Book Appointment</p>
-        </div>
-        <div class="action-card" onclick="openMyReports()">
-            <i class="fas fa-file-medical-alt"></i>
-            <h4>My Reports</h4>
-            <p>View History</p>
-        </div>
-    `;
-}
 
         <div class="stats-grid" id="statsGrid"></div>
 
@@ -413,7 +322,7 @@ function renderPatientView() {
             if (data.photo) document.getElementById('sideAvatar').src = data.photo;
         }
 
-        // --- NEW: SYNC ID WITH DB ---
+        // --- SYNC ID WITH DB ---
         await syncUserWithDB();
 
         // ROUTING
@@ -467,7 +376,6 @@ function renderPatientView() {
             <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
         `;
 
-        // CHANGED: Clicking this now opens only PENDING requests
         document.getElementById('statsGrid').innerHTML = `
             <div class="stat-card" onclick="openAppointmentList('pending')">
                 <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
@@ -475,7 +383,6 @@ function renderPatientView() {
             </div>
         `;
 
-        // CHANGED: Added specific 'accepted' filter to View Bookings
         document.getElementById('actionGrid').innerHTML = `
             <div class="action-card" onclick="openAppointmentList('accepted')">
                 <i class="fas fa-clipboard-list"></i>
@@ -521,33 +428,62 @@ function renderPatientView() {
         modal.classList.remove('active');
     }
 
-    // --- A. PATIENT: UPLOAD REPORT ---
+    // --- A. PATIENT: UPLOAD REPORT (REDESIGNED) ---
     function openUploadModal() {
         modalContent.innerHTML = `
-            <h2><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Upload Medical Report</h2>
+            <h2 style="margin-bottom:20px;">Upload Document</h2>
             <div class="modal-form">
-                <label>Report Type</label>
+                <label>Type of Document</label>
                 <select id="reportType">
-                    <option value="X-Ray">X-Ray</option>
-                    <option value="ECG">ECG</option>
-                    <option value="Blood Test">Blood Test</option>
+                    <option value="X-Ray">X-Ray / Scan</option>
+                    <option value="ECG">ECG Report</option>
+                    <option value="Blood Test">Blood / Lab Test</option>
                     <option value="Prescription">Old Prescription</option>
                 </select>
-                <label>Select File</label>
-                <input type="file" id="reportFile" accept="image/*,.pdf">
-                <button class="btn-login" style="width:100%" onclick="submitReport()">Upload Document</button>
+                
+                <div class="modern-upload-box">
+                    <input type="file" id="reportFile" class="file-input-hidden" accept="image/*,.pdf" onchange="updateFileDisplay(this)">
+                    <div id="uploadContentUi">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click or Drag file here to upload</p>
+                        <small>Supports: PDF, JPG, PNG</small>
+                    </div>
+                </div>
+
+                <div id="fileSelectedName" style="text-align:center; margin-bottom:15px; display:none;">
+                    <span class="file-name-display" id="fNameText"></span>
+                </div>
+
+                <button class="list-btn btn-book" id="btn-upload-action" style="width:100%; padding:15px; font-size:1rem;" onclick="submitReport()">
+                    <i class="fas fa-check"></i> Submit Report
+                </button>
             </div>
         `;
         modal.classList.add('active');
     }
 
+    // Helper for the new design to show filename
+    function updateFileDisplay(input) {
+        const display = document.getElementById('fNameText');
+        const wrapper = document.getElementById('fileSelectedName');
+        if(input.files && input.files[0]) {
+            display.innerText = input.files[0].name;
+            wrapper.style.display = 'block';
+            document.querySelector('.modern-upload-box').style.borderColor = 'var(--secondary)';
+            document.querySelector('.modern-upload-box i').style.color = 'var(--secondary)';
+            document.querySelector('.modern-upload-box i').className = 'fas fa-file-check';
+        }
+    }
+
     function submitReport() {
         const type = document.getElementById('reportType').value;
         const fileInput = document.getElementById('reportFile');
+        const btn = document.getElementById('btn-upload-action');
 
         if (fileInput.files.length === 0) { alert("Please select a file."); return; }
 
-        document.querySelector('.btn-login').innerText = "Uploading...";
+        btn.innerText = "Uploading...";
+        btn.disabled = true;
 
         const reader = new FileReader();
         reader.readAsDataURL(fileInput.files[0]);
@@ -564,13 +500,13 @@ function renderPatientView() {
                 closeModal();
             }).catch(err => {
                 alert("Error: " + err.message);
-                closeModal();
+                btn.innerText = "Submit Report";
+                btn.disabled = false;
             });
         };
     }
 
-    // --- B. PATIENT: MY REPORTS (ADDED VIEW BUTTON) ---
-// --- B. PATIENT: MY REPORTS (FIXED VIEW) ---
+    // --- B. PATIENT: MY REPORTS ---
     function openMyReports() {
         modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
         modal.classList.add('active');
@@ -596,7 +532,6 @@ function renderPatientView() {
                     const div = document.createElement('div');
                     div.className = 'list-item';
                     
-                    // --- FIX: Button calls openReportInNewWindow ---
                     div.innerHTML = `
                         <div>
                             <strong>${data.reportType}</strong><br>
@@ -615,7 +550,7 @@ function renderPatientView() {
             });
     }
 
-    // --- C. PATIENT: FIND DOCTOR (ADDED CANCEL) ---
+    // --- C. PATIENT: FIND DOCTOR ---
     function openFindDoctorModal() {
         modalContent.innerHTML = `
             <h2>Find a Specialist</h2>
@@ -628,7 +563,6 @@ function renderPatientView() {
     async function loadDoctors() {
         const container = document.getElementById('doctorListContainer');
         
-        // 1. Get Real Doctors
         let realDoctors = [];
         try {
             const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
@@ -638,13 +572,11 @@ function renderPatientView() {
             return;
         }
 
-        // 2. Get My Existing Appointments (UPDATED TO STORE ID)
         let myApts = {};
         try {
             const aptSnap = await db.collection('appointments').where('patientId', '==', currentUserData.uid).get();
             aptSnap.forEach(doc => {
                 const data = doc.data();
-                // Store Object instead of just status, so we can access Appointment ID later
                 myApts[data.doctorId] = { status: data.status, aptId: doc.id };
             });
         } catch (e) { console.log(e); }
@@ -663,7 +595,6 @@ function renderPatientView() {
             const displayName = doc.name || "Unknown Doctor";
             const specialty = doc.special || "Specialist";
             
-            // Default: Show Book Button
             let actionHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
             
             if (myApts[doc.id]) {
@@ -671,10 +602,8 @@ function renderPatientView() {
                 const status = aptInfo.status;
 
                 if(status === 'accepted') {
-                    // Approved: Show Green Button (No Cancel)
                     actionHtml = `<button class="list-btn" style="background:var(--secondary); color:white; cursor:default">Approved</button>`;
                 } else if (status === 'pending') {
-                    // Pending: Show "Requested" + "Cancel" Button
                     actionHtml = `
                         <button class="list-btn" style="background:#F59E0B; color:white; cursor:default">Requested</button>
                         <button class="list-btn btn-cancel" onclick="cancelAppointment('${aptInfo.aptId}')">Cancel</button>
@@ -706,26 +635,23 @@ function renderPatientView() {
                 requestDate: new Date().toISOString()
             }).then(() => {
                 alert("Appointment Requested!");
-                loadDoctors(); // Reload to show updated status
+                loadDoctors(); 
             });
         }
     }
 
-    // NEW: CANCEL FUNCTION
     function cancelAppointment(aptId) {
         if(confirm("Are you sure you want to cancel this request?")) {
             db.collection('appointments').doc(aptId).delete()
             .then(() => {
                 alert("Appointment Cancelled.");
-                loadDoctors(); // Reload list to show 'Book' button again
+                loadDoctors(); 
             });
         }
     }
 
     // --- D. DOCTOR: APPOINTMENTS ---
-    // --- D. DOCTOR: APPOINTMENTS (SPLIT LISTS) ---
     function openAppointmentList(filterType) {
-        // Set title based on what button was clicked
         const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
         modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
         modal.classList.add('active');
@@ -741,8 +667,6 @@ function renderPatientView() {
                 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    
-                    // Filter: Only show items matching the requested status
                     if(data.status !== filterType) return; 
                     count++;
 
@@ -752,13 +676,11 @@ function renderPatientView() {
                     let actionButtons = '';
 
                     if(filterType === 'pending') {
-                        // Show Accept/Decline for Pending
                         actionButtons = `
                             <button id="btn-accept-${doc.id}" class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
                             <button id="btn-decline-${doc.id}" class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
                         `;
                     } else {
-                        // Show "Prescribe" button for Accepted patients
                         actionButtons = `
                             <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}', '${data.patientName}')">Open Profile</button>
                         `;
@@ -780,12 +702,9 @@ function renderPatientView() {
             });
     }
 
-    // UPDATED: No Alert Popup
     function updateApt(aptId, status) {
-        // 1. Update Database
         db.collection('appointments').doc(aptId).update({ status: status })
             .then(() => {
-                // 2. Visual Update only (No Alert)
                 if(status === 'accepted') {
                     const btn = document.getElementById(`btn-accept-${aptId}`);
                     const declineBtn = document.getElementById(`btn-decline-${aptId}`);
@@ -795,9 +714,8 @@ function renderPatientView() {
                         btn.disabled = true;
                         btn.style.opacity = "0.7";
                     }
-                    if(declineBtn) declineBtn.style.display = 'none'; // Hide decline button
+                    if(declineBtn) declineBtn.style.display = 'none';
                 } else {
-                    // If declined, maybe just remove the row or show 'Declined'
                     const btn = document.getElementById(`btn-decline-${aptId}`);
                     if(btn) btn.innerText = "Declined";
                 }
@@ -805,23 +723,28 @@ function renderPatientView() {
             .catch(err => console.error(err));
     }
 
-    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT ---
+    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT (REDESIGNED) ---
     function openPatientSearch() {
         modalContent.innerHTML = `
-            <h2>Patient Lookup</h2>
-            <div class="modal-form">
-                <input type="text" id="pharmacySearchInput" placeholder="Enter Patient Name...">
-                <button class="btn-login" style="width:100%" onclick="performSearch()">Search</button>
+            <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
+            
+            <div class="modern-search-bar">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name...">
+                <button class="search-btn-modern" onclick="performSearch()">Search</button>
             </div>
-            <div id="pharmacyResults" style="margin-top:20px"></div>
+
+            <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
         `;
         modal.classList.add('active');
+        // Auto-focus the input
+        setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
     }
 
     function performSearch() {
         const query = document.getElementById('pharmacySearchInput').value.toLowerCase();
         const resultsDiv = document.getElementById('pharmacyResults');
-        resultsDiv.innerHTML = 'Searching database...';
+        resultsDiv.innerHTML = '<div style="text-align:center; color:gray"><i class="fas fa-spinner fa-spin"></i> Searching database...</div>';
 
         db.collection('users').where('role', '==', 'patient').get().then(snap => {
             resultsDiv.innerHTML = '';
@@ -841,13 +764,20 @@ function renderPatientView() {
                         : `openPharmacyPatientView('${doc.id}', '${data.name}')`;
 
                     div.innerHTML = `
-                        <div><strong>${data.name}</strong><br><small>ID: ${doc.id}</small></div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="background:#F3F4F6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-user" style="color:#9CA3AF"></i>
+                            </div>
+                            <div>
+                                <strong>${data.name}</strong><br><small style="font-size:0.75rem; color:#9CA3AF">ID: ${doc.id.substring(0,8)}...</small>
+                            </div>
+                        </div>
                         <button class="list-btn btn-view" onclick="${btnAction}">View Profile</button>
                     `;
                     resultsDiv.appendChild(div);
                 }
             });
-            if (!found) resultsDiv.innerHTML = '<p>No patients found with that name.</p>';
+            if (!found) resultsDiv.innerHTML = `<p style="text-align:center; color:gray; padding:20px;">No patients found matching "${query}".</p>`;
         });
     }
 
@@ -875,7 +805,6 @@ function renderPatientView() {
             
             snap.forEach(doc => {
                 const data = doc.data();
-                // --- FIX: Button calls openReportInNewWindow ---
                 container.innerHTML += `
                     <div class="list-item">
                         <span>${data.reportType}</span>
@@ -894,13 +823,12 @@ function renderPatientView() {
     function loadPatientPrescriptions(patientId, patientName) {
         const container = document.getElementById('patientDetailContent');
         
-        // We render the Form first, and the History container below it
         container.innerHTML = `
             <div style="background:#F3F4F6; padding:15px; border-radius:10px; margin-bottom:15px;">
                 <h4>Add New Prescription</h4>
-                <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:8px;">
-                <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:8px;">
-                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')">Save Prescription</button>
+                <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:12px; border-radius:8px; border:1px solid #E5E7EB;">
+                <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:12px; border-radius:8px; border:1px solid #E5E7EB;">
+                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')" style="margin-top:10px;">Save Prescription</button>
             </div>
             
             <h4>Medical History (Prescriptions)</h4>
@@ -909,14 +837,13 @@ function renderPatientView() {
             </div>
         `;
         
-        // Fetch History from Database
         db.collection('prescriptions')
             .where('patientId', '==', patientId)
             .orderBy('timestamp', 'desc')
             .get()
             .then(snap => {
                 const hist = document.getElementById('rxHistory');
-                hist.innerHTML = ''; // Clear "Loading..." text
+                hist.innerHTML = ''; 
                 
                 if (snap.empty) { 
                     hist.innerHTML = '<p style="color:#6B7280; font-style:italic;">No previous prescriptions recorded.</p>'; 
@@ -925,7 +852,6 @@ function renderPatientView() {
                 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    // Convert timestamp to readable date
                     let dateStr = "Unknown Date";
                     if(data.timestamp) dateStr = new Date(data.timestamp.toDate()).toLocaleDateString();
 
@@ -1003,9 +929,7 @@ function renderPatientView() {
             });
     }
 
-    // --- H. NEW UTILITY FUNCTIONS (FIXES) ---
-
-    // 1. FIX BLANK TAB: Opens Base64 data in a clean iframe window
+    // --- H. UTILITIES ---
     function openReportInNewWindow(base64Data) {
         const win = window.open();
         if (win) {
@@ -1015,25 +939,21 @@ function renderPatientView() {
         }
     }
 
-    // 2. FIX APPOINTMENT ID: Ensures you log in as the existing Doctor/Patient from DB
     async function syncUserWithDB() {
         console.log("Syncing user identity...");
-        // Check if this user (Name + Role) already exists in DB
         const snap = await db.collection('users')
             .where('name', '==', currentUserData.name)
             .where('role', '==', currentUserData.role)
             .get();
 
         if (!snap.empty) {
-            // User exists! Use their REAL ID (fixes the booking mismatch)
             const doc = snap.docs[0];
             if (doc.id !== currentUserData.uid) {
                 console.log("ID Mismatch. Switching to:", doc.id);
                 currentUserData.uid = doc.id;
-                localStorage.setItem('userUid', doc.id); // Save correct ID
+                localStorage.setItem('userUid', doc.id); 
             }
         } else {
-            // New User? Create them in DB now so they can be found
             db.collection('users').doc(currentUserData.uid).set({
                 name: currentUserData.name,
                 role: currentUserData.role,
@@ -1042,7 +962,6 @@ function renderPatientView() {
             }, { merge: true });
         }
         
-        // Refresh UI components that depend on ID
         if(currentUserData.role === 'doctor') openAppointmentList();
     }
 
@@ -1051,10 +970,10 @@ function renderPatientView() {
             localStorage.setItem('isLoggedIn', 'false');
             localStorage.removeItem('userRole');
             localStorage.removeItem('userName');
-            localStorage.removeItem('userUid'); // Clear the ID on logout
+            localStorage.removeItem('userUid');
             window.location.href = 'index.html';
         });
     }
     </script>
 </body>
-</html>
+</html>   
