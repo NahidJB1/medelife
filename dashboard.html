@@ -232,6 +232,39 @@
 .btn-time:hover { background: #D97706; }
 
 
+/* --- NEW: Tab Bar (Replacing Stats) --- */
+.dashboard-tabs {
+    display: flex; gap: 15px; margin-bottom: 2.5rem;
+    border-bottom: 2px solid #E5E7EB; padding-bottom: 0;
+}
+.tab-item {
+    padding: 12px 24px; border-radius: 12px 12px 0 0; cursor: pointer;
+    font-weight: 600; color: var(--gray); transition: all 0.3s;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+.tab-item:hover { background: #FEF2F2; color: var(--primary); }
+.tab-item.active { 
+    color: var(--primary); 
+    border-bottom: 3px solid var(--primary);
+    background: linear-gradient(to top, #FEF2F2, transparent);
+}
+.tab-badge {
+    background: var(--primary); color: white; font-size: 0.7rem;
+    padding: 2px 6px; border-radius: 50%; display: none; /* Hidden by default */
+}
+
+/* --- NEW: Toast Notification (Replaces Alerts) --- */
+#toast-box {
+    position: fixed; bottom: 30px; right: 30px;
+    background: var(--dark); color: white; padding: 15px 25px;
+    border-radius: 12px; z-index: 9999; opacity: 0; transform: translateY(20px);
+    transition: all 0.3s ease; pointer-events: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    display: flex; align-items: center; gap: 10px;
+}
+#toast-box.show { opacity: 1; transform: translateY(0); }
+
     </style>
 </head>
 <body>
@@ -267,7 +300,15 @@
             </div>
         </header>
 
-        <div class="stats-grid" id="statsGrid"></div>
+        <div class="dashboard-tabs" id="mainTabs">
+            </div>
+
+        <div id="tabContentArea">
+            <div class="action-section">
+                <div class="section-title" id="actionTitle">Quick Actions</div>
+                <div class="quick-actions" id="actionGrid"></div>
+            </div>
+        </div>
 
         <div class="action-section">
             <div class="section-title" id="actionTitle">Quick Actions</div>
@@ -281,6 +322,8 @@
             <div id="modalContent"></div>
         </div>
     </div>
+
+    <div id="toast-box"><i class="fas fa-info-circle"></i> <span id="toast-msg">Notification</span></div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -343,65 +386,46 @@
         else renderPatientView();
     }
 
-    // --- 2. PATIENT VIEW ---
-    // --- 2. PATIENT VIEW ---
-function renderPatientView() {
-    document.getElementById('sidebarNav').innerHTML = `
-        <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
-        <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
-        <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
-    `;
 
-    document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-card">
-            <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
-            <div class="stat-info"><h3>Healthy</h3><p>Status</p></div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box icon-doc"><i class="fas fa-file-medical-alt"></i></div>
-            <div class="stat-info"><h3>Check</h3><p>My Reports</p></div>
-        </div>
-    `;
+    // --- 2. PATIENT VIEW ---
+    function renderPatientView() {
+        renderTabs('patient');
 
-    document.getElementById('actionGrid').innerHTML = `
-        <div class="action-card" onclick="openUploadModal()">
-            <i class="fas fa-file-upload"></i>
-            <h4>Upload Report</h4>
-            <p>X-Ray, ECG, etc.</p>
-        </div>
-        <div class="action-card" onclick="openFindDoctorModal()">
-            <i class="fas fa-user-md"></i>
-            <h4>Find Doctors</h4>
-            <p>Book Appointment</p>
-        </div>
-        <div class="action-card" onclick="openPatientSchedule()">
-            <i class="fas fa-calendar-alt"></i>
-            <h4>View Schedule</h4>
-            <p>Check Appointments</p>
-        </div>
-        <div class="action-card" onclick="openMyReports()">
-            <i class="fas fa-file-medical-alt"></i>
-            <h4>My Reports</h4>
-            <p>View History</p>
-        </div>
-    `;
-}
+        // Stats removed. Only Quick Actions remain.
+        document.getElementById('actionGrid').innerHTML = `
+            <div class="action-card" onclick="openUploadModal()">
+                <i class="fas fa-file-upload"></i>
+                <h4>Upload Report</h4>
+                <p>X-Ray, ECG, etc.</p>
+            </div>
+            <div class="action-card" onclick="openFindDoctorModal()">
+                <i class="fas fa-user-md"></i>
+                <h4>Find Doctors</h4>
+                <p>Book Appointment</p>
+            </div>
+            <div class="action-card" onclick="openPatientSchedule()">
+                <i class="fas fa-calendar-alt"></i>
+                <h4>View Schedule</h4>
+                <p>Check Appointments</p>
+            </div>
+            <div class="action-card" onclick="openMyReports()">
+                <i class="fas fa-file-medical-alt"></i>
+                <h4>My Reports</h4>
+                <p>View History</p>
+            </div>
+        `;
+    }
 
     // --- 3. DOCTOR VIEW ---
     function renderDoctorView() {
-        document.getElementById('sidebarNav').innerHTML = `
-            <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
-            <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
-        `;
-
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card" onclick="openAppointmentList('pending')">
-                <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
-                <div class="stat-info"><h3>Check</h3><p>Requests</p></div>
-            </div>
-        `;
+        renderTabs('doctor');
 
         document.getElementById('actionGrid').innerHTML = `
+            <div class="action-card" onclick="openAppointmentList('pending')">
+                <i class="fas fa-calendar-check" style="color:#F59E0B"></i>
+                <h4>Requests</h4>
+                <p>Pending Approvals</p>
+            </div>
             <div class="action-card" onclick="openAppointmentList('accepted')">
                 <i class="fas fa-clipboard-list"></i>
                 <h4>View Bookings</h4>
@@ -417,17 +441,7 @@ function renderPatientView() {
 
     // --- 4. PHARMACY VIEW ---
     function renderPharmacyView() {
-        document.getElementById('sidebarNav').innerHTML = `
-            <div class="nav-item active"><i class="fas fa-clinic-medical"></i> Dashboard</div>
-            <div class="nav-item"><i class="fas fa-search"></i> Patient Lookup</div>
-        `;
-
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card">
-                <div class="icon-box icon-pharmacy"><i class="fas fa-prescription-bottle"></i></div>
-                <div class="stat-info"><h3>Rx</h3><p>Dispense</p></div>
-            </div>
-        `;
+        renderTabs('pharmacy');
 
         document.getElementById('actionGrid').innerHTML = `
             <div class="action-card" onclick="openPatientSearch()">
@@ -437,6 +451,8 @@ function renderPatientView() {
             </div>
         `;
     }
+
+
 
     // ==========================================
     //        LOGIC FUNCTIONS (MODALS)
@@ -494,34 +510,20 @@ function renderPatientView() {
     }
 
     function submitReport() {
-        const type = document.getElementById('reportType').value;
-        const fileInput = document.getElementById('reportFile');
-        const btn = document.getElementById('btn-upload-action');
-
-        if (fileInput.files.length === 0) { alert("Please select a file."); return; }
-
-        btn.innerText = "Uploading...";
-        btn.disabled = true;
-
-        const reader = new FileReader();
-        reader.readAsDataURL(fileInput.files[0]);
-        reader.onload = function () {
-            const base64String = reader.result;
-            db.collection('reports').add({
-                patientId: currentUserData.uid,
-                patientName: currentUserData.name,
-                reportType: type,
-                fileData: base64String,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                // FIXED: Removed success alert as requested
-                closeModal();
-            }).catch(err => {
-                alert("Error: " + err.message);
-                btn.innerText = "Submit Report";
-                btn.disabled = false;
-            });
-        };
+        // ... previous code ...
+        if (fileInput.files.length === 0) { 
+            showToast("Please select a file first."); // Replaced Alert
+            return; 
+        }
+        
+        // ... inside the .then() block ...
+        .then(() => {
+             showToast("Report uploaded successfully!"); // Replaced success
+             closeModal();
+        }).catch(err => {
+             showToast("Error uploading file."); // Replaced Error Alert
+             // ... reset buttons ...
+        });
     }
 
     // --- B. PATIENT: MY REPORTS ---
@@ -918,20 +920,13 @@ function openAppointmentList(filterType) {
     }
 
     function addPrescription(patientId, patientName) {
-        const med = document.getElementById('rxMedicine').value;
-        const dose = document.getElementById('rxDosage').value;
-        if (!med || !dose) return alert("Fill all fields");
+        // ...
+        if (!med || !dose) { showToast("Please fill all fields."); return; } // Replaced Alert
         
         db.collection('prescriptions').add({
-            patientId: patientId,
-            patientName: patientName,
-            medicine: med,
-            dosage: dose,
-            doctorId: currentUserData.uid,
-            doctorName: currentUserData.name,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            // ... fields ...
         }).then(() => {
-            // FIXED: Removed success alert as requested
+            showToast("Prescription added!"); // Success Feedback
             loadPatientPrescriptions(patientId, patientName);
         });
     }
@@ -974,9 +969,9 @@ function openAppointmentList(filterType) {
     function openReportInNewWindow(base64Data) {
         const win = window.open();
         if (win) {
-            win.document.write('<iframe src="' + base64Data + '" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>');
+            win.document.write('<iframe src="' + base64Data + '" ... ></iframe>'); // keep iframe code
         } else {
-            alert("Please allow popups to view the report.");
+            showToast("Popups blocked. Allow them to view reports."); // Replaced Alert
         }
     }
 
@@ -1095,6 +1090,121 @@ function saveAppointmentTime(aptId) {
         openAppointmentList('accepted');
     });
 }
+
+// --- NEW: TAB LOGIC ---
+    function renderTabs(role) {
+        document.getElementById('mainTabs').innerHTML = `
+            <div class="tab-item active" onclick="switchMainTab(this, 'home')">
+                <i class="fas fa-home"></i> Home
+            </div>
+            <div class="tab-item" onclick="switchMainTab(this, 'community')">
+                <i class="fas fa-users"></i> Community
+            </div>
+            <div class="tab-item" onclick="switchMainTab(this, 'notifications')">
+                <i class="fas fa-bell"></i> Notifications <span id="notifBadge" class="tab-badge">0</span>
+            </div>
+        `;
+    }
+
+    function switchMainTab(el, tabName) {
+        // 1. Update UI classes
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        const contentArea = document.getElementById('tabContentArea');
+
+        // 2. Logic for tabs
+        if (tabName === 'home') {
+            // Restore Home View (Quick Actions)
+            contentArea.innerHTML = `
+                <div class="action-section">
+                    <div class="section-title">Quick Actions</div>
+                    <div class="quick-actions" id="actionGrid"></div>
+                </div>
+            `;
+            // Re-render the specific role actions because we wiped the container
+            if (currentUserData.role === 'doctor') renderDoctorView();
+            else if (currentUserData.role === 'pharmacy') renderPharmacyView();
+            else renderPatientView();
+        
+        } else if (tabName === 'community') {
+            // Placeholder for Blog/Community
+            contentArea.innerHTML = `
+                <div style="text-align:center; padding: 4rem 2rem;">
+                    <i class="fas fa-users" style="font-size: 3rem; color: var(--secondary); margin-bottom: 1rem;"></i>
+                    <h3>Community Feed</h3>
+                    <p style="color:var(--gray)">Read latest health blogs and community posts.</p>
+                    <button class="list-btn btn-book" style="margin-top:1rem;">Explore Articles</button>
+                </div>
+            `;
+        } else if (tabName === 'notifications') {
+            contentArea.innerHTML = `
+                <div class="section-title">Notifications</div>
+                <div id="notificationList">Loading...</div>
+            `;
+            loadNotifications();
+        }
+    }
+
+    // --- NEW: NOTIFICATION LOGIC ---
+    function loadNotifications() {
+        const list = document.getElementById('notificationList');
+        list.innerHTML = '';
+        
+        // Simple logic: If patient, show appointment status updates.
+        // If doctor, show pending requests.
+        
+        if (currentUserData.role === 'patient') {
+             db.collection('appointments')
+                .where('patientId', '==', currentUserData.uid)
+                .orderBy('requestDate', 'desc')
+                .limit(5)
+                .get().then(snap => {
+                    if(snap.empty) { list.innerHTML = '<p style="color:gray">No notifications.</p>'; return; }
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        let icon = data.status === 'accepted' ? '<i class="fas fa-check-circle" style="color:green"></i>' : '<i class="fas fa-clock" style="color:orange"></i>';
+                        let msg = data.status === 'accepted' ? `Dr. ${data.doctorName} approved your appointment.` : `Request sent to Dr. ${data.doctorName}.`;
+                        
+                        list.innerHTML += `
+                            <div class="list-item" style="border-left:4px solid ${data.status === 'accepted' ? 'green' : 'orange'}">
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    ${icon}
+                                    <span>${msg}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+        } else if (currentUserData.role === 'doctor') {
+             db.collection('appointments')
+                .where('doctorId', '==', currentUserData.uid)
+                .where('status', '==', 'pending')
+                .get().then(snap => {
+                    if(snap.empty) { list.innerHTML = '<p style="color:gray">No new notifications.</p>'; return; }
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        list.innerHTML += `
+                            <div class="list-item">
+                                <div><strong>New Request</strong><br>Patient: ${data.patientName}</div>
+                                <button class="list-btn btn-view" onclick="openAppointmentList('pending')">View</button>
+                            </div>
+                        `;
+                    });
+                });
+        } else {
+            list.innerHTML = '<p>No notifications.</p>';
+        }
+    }
+
+    // --- NEW: TOAST HELPER (Replace Alerts) ---
+    function showToast(msg) {
+        const box = document.getElementById('toast-box');
+        document.getElementById('toast-msg').innerText = msg;
+        box.classList.add('show');
+        setTimeout(() => box.classList.remove('show'), 3000);
+    }
+    
     </script>
 </body>
 </html>
