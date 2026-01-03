@@ -114,6 +114,57 @@
             .sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
         }
+
+        /* --- ADD THIS TO YOUR CSS --- */
+        
+        /* Pharmacy Theme */
+        .icon-pharmacy { background: #E0E7FF; color: #4F46E5; }
+        
+        /* Modal Styles (Reuse from Index but customized for Dashboard) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+        
+        .dashboard-modal {
+            background: white; width: 90%; max-width: 600px;
+            border-radius: 16px; padding: 2rem; position: relative;
+            max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .close-modal {
+            position: absolute; top: 15px; right: 20px; font-size: 1.5rem;
+            cursor: pointer; color: var(--gray);
+        }
+        
+        /* List Items for Doctors/Appointments */
+        .list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; border: 1px solid #E5E7EB; border-radius: 10px;
+            margin-bottom: 10px; transition: 0.2s;
+        }
+        .list-item:hover { border-color: var(--primary); background: #FEF2F2; }
+        
+        .list-btn {
+            padding: 8px 16px; border-radius: 6px; border: none; 
+            font-weight: 600; cursor: pointer; font-size: 0.85rem;
+        }
+        .btn-book { background: var(--primary); color: white; }
+        .btn-view { background: #4F46E5; color: white; }
+        .btn-accept { background: var(--secondary); color: white; margin-right: 5px;}
+        .btn-decline { background: var(--primary); color: white; }
+
+        /* Form Elements inside Modal */
+        .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .modal-form select, .modal-form input, .modal-form textarea {
+            width: 100%; padding: 10px; border: 1px solid #E5E7EB; 
+            border-radius: 8px; margin-bottom: 15px;
+        }
+
+
     </style>
 </head>
 <body>
@@ -160,144 +211,404 @@
         </div>
     </main>
 
+    <div class="modal-overlay" id="dashboardModal">
+        <div class="dashboard-modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="js/firebase-init.js"></script>
+
     <script>
-        // --- 1. CONFIGURATION ---
+        // --- 0. FIREBASE SETUP (Ensure this matches your firebase-init.js) ---
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentUserData = null; // Store current user info here
+
+        // --- 1. INITIALIZATION ---
         document.addEventListener("DOMContentLoaded", () => {
             initDashboard();
         });
 
         function initDashboard() {
-            // Check Login
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            if (!isLoggedIn) {
-                window.location.href = 'index.html'; // Kick them out if not logged in
-                return;
-            }
+            if (!isLoggedIn) { window.location.href = 'index.html'; return; }
 
-            // Load User Data
-            const role = localStorage.getItem('userRole') || 'patient'; // Default to patient
+            const role = localStorage.getItem('userRole') || 'patient';
             const name = localStorage.getItem('userName') || 'User';
             
-            // Set Date
+            // Set User Data in Global Variable for easy access
+            currentUserData = {
+                name: name,
+                role: role,
+                // In a real app, you get the UID from auth().currentUser.uid
+                // For this demo, we use email or a stored ID if available, else random
+                uid: auth.currentUser ? auth.currentUser.uid : 'demo_user_' + Math.floor(Math.random() * 1000)
+            };
+
+            // UI Header
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
-
-            // Update UI
             document.getElementById('welcomeTitle').innerHTML = `Welcome back, <span style="color: var(--primary)">${name}</span>`;
             document.getElementById('sideName').innerText = name;
             document.getElementById('sideRole').innerText = role.toUpperCase();
 
-            // Load Avatar if exists
+            // Load Avatar
             const savedJSON = localStorage.getItem('userProfileData');
             if (savedJSON) {
                 const data = JSON.parse(savedJSON);
                 if(data.photo) document.getElementById('sideAvatar').src = data.photo;
             }
 
-            // RENDER BASED ON ROLE
-            if (role === 'doctor') {
-                renderDoctorView();
-            } else {
-                renderPatientView();
-            }
+            // ROUTING
+            if (role === 'doctor') renderDoctorView();
+            else if (role === 'pharmacy') renderPharmacyView();
+            else renderPatientView();
         }
 
-        // --- 2. DOCTOR VIEW ---
-        function renderDoctorView() {
-            // Sidebar
-            const navHTML = `
-                <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
-                <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
-                <div class="nav-item"><i class="fas fa-calendar-alt"></i> Appointments</div>
-                <div class="nav-item"><i class="fas fa-file-medical-alt"></i> Reports</div>
-            `;
-            document.getElementById('sidebarNav').innerHTML = navHTML;
-
-            // Stats
-            const statsHTML = `
-                <div class="stat-card" style="animation-delay: 0.1s">
-                    <div class="icon-box icon-doc"><i class="fas fa-user-clock"></i></div>
-                    <div class="stat-info"><h3>12</h3><p>Appointments Today</p></div>
-                </div>
-                <div class="stat-card" style="animation-delay: 0.2s">
-                    <div class="icon-box icon-patient"><i class="fas fa-users"></i></div>
-                    <div class="stat-info"><h3>450</h3><p>Total Patients</p></div>
-                </div>
-                <div class="stat-card" style="animation-delay: 0.3s">
-                    <div class="icon-box icon-doc" style="background: #E0F2FE; color: #0284C7"><i class="fas fa-clipboard-check"></i></div>
-                    <div class="stat-info"><h3>8</h3><p>Pending Reports</p></div>
-                </div>
-            `;
-            document.getElementById('statsGrid').innerHTML = statsHTML;
-
-            // Actions
-            const actionsHTML = `
-                <div class="action-card">
-                    <i class="fas fa-search"></i>
-                    <h4>Find Patient</h4>
-                    <p>Search by ID or Name</p>
-                </div>
-                <div class="action-card">
-                    <i class="fas fa-notes-medical"></i>
-                    <h4>New Record</h4>
-                    <p>Add consultation notes</p>
-                </div>
-                <div class="action-card">
-                    <i class="fas fa-video"></i>
-                    <h4>Tele-Consult</h4>
-                    <p>Start virtual meeting</p>
-                </div>
-            `;
-            document.getElementById('actionGrid').innerHTML = actionsHTML;
-        }
-
-        // --- 3. PATIENT VIEW ---
+        // --- 2. PATIENT VIEW ---
         function renderPatientView() {
             // Sidebar
-            const navHTML = `
+            document.getElementById('sidebarNav').innerHTML = `
                 <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
                 <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
                 <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
                 <div class="nav-item"><i class="fas fa-cog"></i> Settings</div>
             `;
-            document.getElementById('sidebarNav').innerHTML = navHTML;
 
             // Stats
-            const statsHTML = `
-                <div class="stat-card" style="animation-delay: 0.1s">
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
                     <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
                     <div class="stat-info"><h3>Healthy</h3><p>Current Status</p></div>
                 </div>
-                <div class="stat-card" style="animation-delay: 0.2s">
+                <div class="stat-card">
                     <div class="icon-box icon-doc"><i class="fas fa-file-prescription"></i></div>
                     <div class="stat-info"><h3>2</h3><p>Active Scripts</p></div>
                 </div>
-                <div class="stat-card" style="animation-delay: 0.3s">
+                <div class="stat-card">
                     <div class="icon-box icon-patient" style="background: #FFF7ED; color: #EA580C"><i class="fas fa-calendar-check"></i></div>
                     <div class="stat-info"><h3>Oct 24</h3><p>Next Visit</p></div>
                 </div>
             `;
-            document.getElementById('statsGrid').innerHTML = statsHTML;
 
-            // Actions
-            const actionsHTML = `
-                <div class="action-card">
+            // Actions (UPDATED)
+            document.getElementById('actionGrid').innerHTML = `
+                <div class="action-card" onclick="openUploadModal()">
                     <i class="fas fa-file-upload"></i>
                     <h4>Upload Report</h4>
-                    <p>Scan & save documents</p>
+                    <p>X-Ray, ECG, etc.</p>
                 </div>
-                <div class="action-card">
+                <div class="action-card" onclick="openFindDoctorModal()">
                     <i class="fas fa-user-md"></i>
                     <h4>Find Doctors</h4>
-                    <p>Book an appointment</p>
+                    <p>Book Appointment</p>
                 </div>
                 <div class="action-card">
                     <i class="fas fa-qrcode"></i>
                     <h4>My Health ID</h4>
-                    <p>Show QR to doctor</p>
+                    <p>Show QR Code</p>
                 </div>
             `;
-            document.getElementById('actionGrid').innerHTML = actionsHTML;
+        }
+
+        // --- 3. DOCTOR VIEW ---
+        function renderDoctorView() {
+            document.getElementById('sidebarNav').innerHTML = `
+                <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
+                <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
+                <div class="nav-item"><i class="fas fa-calendar-alt"></i> Appointments</div>
+            `;
+
+            // Check Appointments in DB
+            // Note: For demo we just show a static number, but click opens the real list
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card" onclick="openAppointmentList()">
+                    <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-info"><h3>Check</h3><p>Appointments</p></div>
+                </div>
+            `;
+
+            document.getElementById('actionGrid').innerHTML = `
+                <div class="action-card" onclick="openAppointmentList()">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h4>View Bookings</h4>
+                    <p>Accept or Decline</p>
+                </div>
+            `;
+        }
+
+        // --- 4. PHARMACY VIEW (NEW) ---
+        function renderPharmacyView() {
+            document.getElementById('sidebarNav').innerHTML = `
+                <div class="nav-item active"><i class="fas fa-clinic-medical"></i> Dashboard</div>
+                <div class="nav-item"><i class="fas fa-search"></i> Patient Lookup</div>
+                <div class="nav-item"><i class="fas fa-box"></i> Inventory</div>
+            `;
+
+            // Pharmacy Stats
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="icon-box icon-pharmacy"><i class="fas fa- prescription-bottle"></i></div>
+                    <div class="stat-info"><h3>120</h3><p>Scripts Filled</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box icon-pharmacy"><i class="fas fa-search"></i></div>
+                    <div class="stat-info"><h3>Search</h3><p>Find Patient</p></div>
+                </div>
+            `;
+
+            // Pharmacy Actions
+            document.getElementById('actionGrid').innerHTML = `
+                <div class="action-card" onclick="openPatientSearch()">
+                    <i class="fas fa-search"></i>
+                    <h4>Search Patient</h4>
+                    <p>View Prescriptions</p>
+                </div>
+                <div class="action-card">
+                    <i class="fas fa-cash-register"></i>
+                    <h4>Billing</h4>
+                    <p>Process Payment</p>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        //        LOGIC FUNCTIONS (MODALS)
+        // ==========================================
+
+        const modal = document.getElementById('dashboardModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        // --- A. PATIENT: UPLOAD REPORT ---
+        function openUploadModal() {
+            modalContent.innerHTML = `
+                <h2><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Upload Medical Report</h2>
+                <p style="margin-bottom:20px; color:gray;">Doctors will be able to view these documents.</p>
+                
+                <div class="modal-form">
+                    <label>Report Type</label>
+                    <select id="reportType" onchange="checkReportType(this)">
+                        <option value="X-Ray">X-Ray</option>
+                        <option value="ECG">ECG</option>
+                        <option value="Blood Test">Blood Test</option>
+                        <option value="Prescription">Old Prescription</option>
+                        <option value="Other">Other (Type Manually)</option>
+                    </select>
+                    
+                    <input type="text" id="customReportType" placeholder="Enter report name..." style="display:none;">
+
+                    <label>Select File</label>
+                    <input type="file" id="reportFile" accept="image/*,.pdf">
+                    
+                    <button class="btn-login" style="width:100%" onclick="submitReport()">Upload Document</button>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        function checkReportType(select) {
+            const customInput = document.getElementById('customReportType');
+            if(select.value === 'Other') customInput.style.display = 'block';
+            else customInput.style.display = 'none';
+        }
+
+        function submitReport() {
+            const select = document.getElementById('reportType');
+            const type = select.value === 'Other' ? document.getElementById('customReportType').value : select.value;
+            const fileInput = document.getElementById('reportFile');
+
+            if(fileInput.files.length === 0) { alert("Please select a file."); return; }
+            
+            // Convert to Base64 (Simulation for DB storage)
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput.files[0]);
+            reader.onload = function () {
+                const base64String = reader.result;
+
+                // SAVE TO FIRESTORE
+                db.collection('reports').add({
+                    patientId: currentUserData.uid,
+                    patientName: currentUserData.name,
+                    reportType: type,
+                    fileData: base64String, // Note: In production, store URL from Storage, not base64 string
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    alert("Report Uploaded Successfully!");
+                    closeModal();
+                }).catch(err => alert("Error uploading: " + err.message));
+            };
+        }
+
+        // --- B. PATIENT: FIND DOCTOR ---
+        function openFindDoctorModal() {
+            modalContent.innerHTML = `
+                <h2>Find a Specialist</h2>
+                <div id="doctorListContainer" style="margin-top:20px;">
+                    <p>Loading doctors...</p>
+                </div>
+            `;
+            modal.classList.add('active');
+            loadDoctors();
+        }
+
+        async function loadDoctors() {
+            const container = document.getElementById('doctorListContainer');
+            container.innerHTML = '';
+
+            // 1. Fake Doctors
+            const fakeDoctors = [
+                { id: 'fake1', name: 'Dr. Aishah Lee', special: 'Cardiologist', clinic: 'Sunway Medical' },
+                { id: 'fake2', name: 'Dr. Raj Kumar', special: 'General Practitioner', clinic: 'Klinik Mediviron' }
+            ];
+
+            // 2. Real Doctors from DB
+            let realDoctors = [];
+            try {
+                const snapshot = await db.collection('users').where('role', '==', 'doctor').get();
+                snapshot.forEach(doc => {
+                    realDoctors.push({ id: doc.id, ...doc.data() }); // Spread data: needs name field
+                });
+            } catch (e) { console.log("DB Error or no permission", e); }
+
+            const allDoctors = [...fakeDoctors, ...realDoctors];
+
+            allDoctors.forEach(doc => {
+                const displayName = doc.name || doc.email || "Unknown Doctor"; // Fallback
+                const specialty = doc.special || "General Specialist";
+                
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${displayName}</strong><br>
+                        <small style="color:gray">${specialty}</small>
+                    </div>
+                    <button class="list-btn btn-book" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function bookAppointment(docId, docName) {
+            if(confirm(`Book appointment with ${docName}?`)) {
+                db.collection('appointments').add({
+                    patientId: currentUserData.uid,
+                    patientName: currentUserData.name,
+                    doctorId: docId,
+                    doctorName: docName,
+                    status: 'pending',
+                    requestDate: new Date().toISOString()
+                }).then(() => {
+                    alert("Appointment Request Sent!");
+                    closeModal();
+                });
+            }
+        }
+
+        // --- C. DOCTOR: APPOINTMENTS ---
+        function openAppointmentList() {
+            modalContent.innerHTML = `<h2>Incoming Appointments</h2><div id="aptList">Loading...</div>`;
+            modal.classList.add('active');
+
+            db.collection('appointments')
+              .where('doctorId', '==', currentUserData.uid) // Match current logged in doctor
+              .where('status', '==', 'pending')
+              .get()
+              .then(snap => {
+                  const list = document.getElementById('aptList');
+                  list.innerHTML = '';
+                  if(snap.empty) { list.innerHTML = '<p>No pending appointments.</p>'; return; }
+
+                  snap.forEach(doc => {
+                      const data = doc.data();
+                      const div = document.createElement('div');
+                      div.className = 'list-item';
+                      div.innerHTML = `
+                        <div>
+                            <strong>${data.patientName}</strong><br>
+                            <small>Requested: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                        </div>
+                        <div>
+                            <button class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
+                            <button class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
+                        </div>
+                      `;
+                      list.appendChild(div);
+                  });
+              });
+        }
+
+        function updateApt(aptId, status) {
+            db.collection('appointments').doc(aptId).update({ status: status })
+              .then(() => {
+                  alert("Appointment " + status);
+                  openAppointmentList(); // Refresh list
+              });
+        }
+
+        // --- D. PHARMACY: SEARCH PATIENT ---
+        function openPatientSearch() {
+            modalContent.innerHTML = `
+                <h2>Pharmacy Lookup</h2>
+                <div class="modal-form">
+                    <input type="text" id="pharmacySearchInput" placeholder="Enter Patient Name or ID...">
+                    <button class="btn-login" style="width:100%" onclick="performSearch()">Search</button>
+                </div>
+                <div id="pharmacyResults" style="margin-top:20px"></div>
+            `;
+            modal.classList.add('active');
+        }
+
+        function performSearch() {
+            const query = document.getElementById('pharmacySearchInput').value.toLowerCase();
+            const resultsDiv = document.getElementById('pharmacyResults');
+            resultsDiv.innerHTML = 'Searching...';
+
+            // Simple query: looking for users where role is patient
+            // Note: Firestore doesn't do partial text search easily (LIKE %query%). 
+            // For this demo, we will get all patients and filter client side (Not recommended for prod, but good for demo)
+            
+            db.collection('users').where('role', '==', 'patient').get().then(snap => {
+                resultsDiv.innerHTML = '';
+                let found = false;
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const pName = (data.name || '').toLowerCase();
+                    
+                    if(pName.includes(query)) {
+                        found = true;
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.innerHTML = `
+                            <div>
+                                <strong>${data.name}</strong><br>
+                                <small>ID: ${doc.id}</small>
+                            </div>
+                            <button class="list-btn btn-view" onclick="viewPrescriptions('${data.name}')">View Scripts</button>
+                        `;
+                        resultsDiv.appendChild(div);
+                    }
+                });
+
+                if(!found) resultsDiv.innerHTML = '<p>No patients found.</p>';
+            });
+        }
+
+        function viewPrescriptions(patientName) {
+            alert(`Opening Prescription History for ${patientName}...\n\n(No active prescriptions found in this demo)`);
         }
 
         function logout() {
