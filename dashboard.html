@@ -223,381 +223,371 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
-    <script src="js/firebase-init.js"></script>
-
     <script>
-       <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
-    <script src="js/firebase-init.js"></script>
+    // --- 0. FIREBASE SETUP ---
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    <script>
-        // --- 0. FIREBASE SETUP ---
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+    let currentUserData = null;
+    const modal = document.getElementById('dashboardModal');
+    const modalContent = document.getElementById('modalContent');
 
-        let currentUserData = null; 
-        const modal = document.getElementById('dashboardModal');
-        const modalContent = document.getElementById('modalContent');
+    // --- 1. INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", () => {
+        initDashboard();
+    });
 
-        // --- 1. INITIALIZATION ---
-        document.addEventListener("DOMContentLoaded", () => {
-            initDashboard();
-        });
+    function initDashboard() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        if (!isLoggedIn) { window.location.href = 'index.html'; return; }
 
-        function initDashboard() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            if (!isLoggedIn) { window.location.href = 'index.html'; return; }
+        const role = localStorage.getItem('userRole') || 'patient';
+        const name = localStorage.getItem('userName') || 'User';
 
-            const role = localStorage.getItem('userRole') || 'patient';
-            const name = localStorage.getItem('userName') || 'User';
-            
-            // [FIX] Retrieve stored UID or create ONE and save it.
-            let storedUid = localStorage.getItem('userUid');
-            if (!storedUid) {
-                storedUid = auth.currentUser ? auth.currentUser.uid : 'user_' + Math.floor(Math.random() * 100000);
-                localStorage.setItem('userUid', storedUid);
-            }
-
-            currentUserData = {
-                name: name,
-                role: role,
-                uid: storedUid
-            };
-
-            // UI Header
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
-            document.getElementById('welcomeTitle').innerHTML = `Welcome back, <span style="color: var(--primary)">${name}</span>`;
-            document.getElementById('sideName').innerText = name;
-            document.getElementById('sideRole').innerText = role.toUpperCase();
-
-            // Load Avatar
-            const savedJSON = localStorage.getItem('userProfileData');
-            if (savedJSON) {
-                const data = JSON.parse(savedJSON);
-                if(data.photo) document.getElementById('sideAvatar').src = data.photo;
-            }
-
-            // ROUTING
-            if (role === 'doctor') renderDoctorView();
-            else if (role === 'pharmacy') renderPharmacyView();
-            else renderPatientView();
+        // [CRITICAL FIX] Ensure ID stays the same across reloads
+        let storedUid = localStorage.getItem('userUid');
+        if (!storedUid) {
+            // Generate ID once and keep it forever
+            storedUid = 'user_' + Math.floor(Math.random() * 1000000);
+            localStorage.setItem('userUid', storedUid);
         }
 
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'index.html';
+        currentUserData = {
+            name: name,
+            role: role,
+            uid: storedUid
+        };
+
+        console.log("Logged in as:", currentUserData); // Debugging
+
+        // UI Header
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
+        document.getElementById('welcomeTitle').innerHTML = `Welcome back, <span style="color: var(--primary)">${name}</span>`;
+        document.getElementById('sideName').innerText = name;
+        document.getElementById('sideRole').innerText = role.toUpperCase();
+
+        // Load Avatar
+        const savedJSON = localStorage.getItem('userProfileData');
+        if (savedJSON) {
+            const data = JSON.parse(savedJSON);
+            if (data.photo) document.getElementById('sideAvatar').src = data.photo;
         }
 
-        // --- 2. PATIENT VIEW ---
-        function renderPatientView() {
-            // Sidebar
-            document.getElementById('sidebarNav').innerHTML = `
-                <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
-                <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
-                <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
-                <div class="nav-item"><i class="fas fa-cog"></i> Settings</div>
-            `;
+        // ROUTING
+        if (role === 'doctor') renderDoctorView();
+        else if (role === 'pharmacy') renderPharmacyView();
+        else renderPatientView();
+    }
 
-            // Stats
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card">
-                    <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
-                    <div class="stat-info"><h3>Healthy</h3><p>Current Status</p></div>
-                </div>
-                <div class="stat-card">
-                    <div class="icon-box icon-doc"><i class="fas fa-file-prescription"></i></div>
-                    <div class="stat-info"><h3>2</h3><p>Active Scripts</p></div>
-                </div>
-                <div class="stat-card">
-                    <div class="icon-box icon-patient" style="background: #FFF7ED; color: #EA580C"><i class="fas fa-calendar-check"></i></div>
-                    <div class="stat-info"><h3>Oct 24</h3><p>Next Visit</p></div>
-                </div>
-            `;
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        // Do NOT clear userUid so data persists for this browser
+        window.location.href = 'index.html';
+    }
 
-            // Actions
-            document.getElementById('actionGrid').innerHTML = `
-                <div class="action-card" onclick="openUploadModal()">
-                    <i class="fas fa-file-upload"></i>
-                    <h4>Upload Report</h4>
-                    <p>X-Ray, ECG, etc.</p>
-                </div>
-                <div class="action-card" onclick="openFindDoctorModal()">
-                    <i class="fas fa-user-md"></i>
-                    <h4>Find Doctors</h4>
-                    <p>Book Appointment</p>
-                </div>
-                <div class="action-card" onclick="openMyReports()">
-                    <i class="fas fa-file-medical-alt"></i>
-                    <h4>My Reports</h4>
-                    <p>View History</p>
-                </div>
-            `;
-        }
+    // --- 2. PATIENT VIEW ---
+    function renderPatientView() {
+        document.getElementById('sidebarNav').innerHTML = `
+            <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
+            <div class="nav-item"><i class="fas fa-history"></i> Medical History</div>
+            <div class="nav-item"><i class="fas fa-pills"></i> Prescriptions</div>
+        `;
 
-        // --- 3. DOCTOR VIEW ---
-        function renderDoctorView() {
-            document.getElementById('sidebarNav').innerHTML = `
-                <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
-                <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
-                <div class="nav-item"><i class="fas fa-calendar-alt"></i> Appointments</div>
-            `;
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="icon-box icon-patient"><i class="fas fa-heartbeat"></i></div>
+                <div class="stat-info"><h3>Healthy</h3><p>Status</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-box icon-doc"><i class="fas fa-file-medical-alt"></i></div>
+                <div class="stat-info"><h3>Check</h3><p>My Reports</p></div>
+            </div>
+        `;
 
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card" onclick="openAppointmentList()">
-                    <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
-                    <div class="stat-info"><h3>Check</h3><p>Appointments</p></div>
-                </div>
-            `;
+        // FIXED: Added specific IDs to buttons to ensure clicks work
+        document.getElementById('actionGrid').innerHTML = `
+            <div class="action-card" onclick="openUploadModal()">
+                <i class="fas fa-file-upload"></i>
+                <h4>Upload Report</h4>
+                <p>X-Ray, ECG, etc.</p>
+            </div>
+            <div class="action-card" onclick="openFindDoctorModal()">
+                <i class="fas fa-user-md"></i>
+                <h4>Find Doctors</h4>
+                <p>Book Appointment</p>
+            </div>
+            <div class="action-card" onclick="openMyReports()">
+                <i class="fas fa-file-medical-alt"></i>
+                <h4>My Reports</h4>
+                <p>View History</p>
+            </div>
+        `;
+    }
 
-            document.getElementById('actionGrid').innerHTML = `
-                <div class="action-card" onclick="openAppointmentList()">
-                    <i class="fas fa-clipboard-list"></i>
-                    <h4>View Bookings</h4>
-                    <p>Accept or Decline</p>
-                </div>
-                <div class="action-card" onclick="openPatientSearch()">
-                    <i class="fas fa-user-injured"></i>
-                    <h4>Find Patient</h4>
-                    <p>View History & Prescribe</p>
-                </div>
-            `;
-        }
+    // --- 3. DOCTOR VIEW ---
+    function renderDoctorView() {
+        document.getElementById('sidebarNav').innerHTML = `
+            <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
+            <div class="nav-item"><i class="fas fa-user-injured"></i> My Patients</div>
+        `;
 
-        // --- 4. PHARMACY VIEW ---
-        function renderPharmacyView() {
-            document.getElementById('sidebarNav').innerHTML = `
-                <div class="nav-item active"><i class="fas fa-clinic-medical"></i> Dashboard</div>
-                <div class="nav-item"><i class="fas fa-search"></i> Patient Lookup</div>
-                <div class="nav-item"><i class="fas fa-box"></i> Inventory</div>
-            `;
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card" onclick="openAppointmentList()">
+                <div class="icon-box icon-doc"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-info"><h3>Check</h3><p>Appointments</p></div>
+            </div>
+        `;
 
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card">
-                    <div class="icon-box icon-pharmacy"><i class="fas fa-prescription-bottle"></i></div>
-                    <div class="stat-info"><h3>120</h3><p>Scripts Filled</p></div>
-                </div>
-                <div class="stat-card">
-                    <div class="icon-box icon-pharmacy"><i class="fas fa-search"></i></div>
-                    <div class="stat-info"><h3>Search</h3><p>Find Patient</p></div>
-                </div>
-            `;
+        document.getElementById('actionGrid').innerHTML = `
+            <div class="action-card" onclick="openAppointmentList()">
+                <i class="fas fa-clipboard-list"></i>
+                <h4>View Bookings</h4>
+                <p>Accept or Decline</p>
+            </div>
+            <div class="action-card" onclick="openPatientSearch()">
+                <i class="fas fa-user-injured"></i>
+                <h4>Find Patient</h4>
+                <p>View History & Prescribe</p>
+            </div>
+        `;
+    }
 
-            document.getElementById('actionGrid').innerHTML = `
-                <div class="action-card" onclick="openPatientSearch()">
-                    <i class="fas fa-search"></i>
-                    <h4>Search Patient</h4>
-                    <p>View Prescriptions</p>
-                </div>
-                <div class="action-card">
-                    <i class="fas fa-cash-register"></i>
-                    <h4>Billing</h4>
-                    <p>Process Payment</p>
-                </div>
-            `;
-        }
+    // --- 4. PHARMACY VIEW ---
+    function renderPharmacyView() {
+        document.getElementById('sidebarNav').innerHTML = `
+            <div class="nav-item active"><i class="fas fa-clinic-medical"></i> Dashboard</div>
+            <div class="nav-item"><i class="fas fa-search"></i> Patient Lookup</div>
+        `;
 
-        // ==========================================
-        //        LOGIC FUNCTIONS (MODALS)
-        // ==========================================
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="icon-box icon-pharmacy"><i class="fas fa-prescription-bottle"></i></div>
+                <div class="stat-info"><h3>Rx</h3><p>Dispense</p></div>
+            </div>
+        `;
 
-        function closeModal() {
-            modal.classList.remove('active');
-        }
+        document.getElementById('actionGrid').innerHTML = `
+            <div class="action-card" onclick="openPatientSearch()">
+                <i class="fas fa-search"></i>
+                <h4>Search Patient</h4>
+                <p>View Prescriptions</p>
+            </div>
+        `;
+    }
 
-        // --- A. PATIENT: UPLOAD REPORT ---
-        function openUploadModal() {
-            modalContent.innerHTML = `
-                <h2><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Upload Medical Report</h2>
-                <p style="margin-bottom:20px; color:gray;">Doctors will be able to view these documents.</p>
-                
-                <div class="modal-form">
-                    <label>Report Type</label>
-                    <select id="reportType" onchange="checkReportType(this)">
-                        <option value="X-Ray">X-Ray</option>
-                        <option value="ECG">ECG</option>
-                        <option value="Blood Test">Blood Test</option>
-                        <option value="Prescription">Old Prescription</option>
-                        <option value="Other">Other (Type Manually)</option>
-                    </select>
-                    
-                    <input type="text" id="customReportType" placeholder="Enter report name..." style="display:none;">
+    // ==========================================
+    //        LOGIC FUNCTIONS (MODALS)
+    // ==========================================
 
-                    <label>Select File</label>
-                    <input type="file" id="reportFile" accept="image/*,.pdf">
-                    
-                    <button class="btn-login" style="width:100%" onclick="submitReport()">Upload Document</button>
-                </div>
-            `;
-            modal.classList.add('active');
-        }
+    function closeModal() {
+        modal.classList.remove('active');
+    }
 
-        function checkReportType(select) {
-            const customInput = document.getElementById('customReportType');
-            if(select.value === 'Other') customInput.style.display = 'block';
-            else customInput.style.display = 'none';
-        }
+    // --- A. PATIENT: UPLOAD REPORT ---
+    function openUploadModal() {
+        modalContent.innerHTML = `
+            <h2><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Upload Medical Report</h2>
+            <div class="modal-form">
+                <label>Report Type</label>
+                <select id="reportType">
+                    <option value="X-Ray">X-Ray</option>
+                    <option value="ECG">ECG</option>
+                    <option value="Blood Test">Blood Test</option>
+                    <option value="Prescription">Old Prescription</option>
+                </select>
+                <label>Select File</label>
+                <input type="file" id="reportFile" accept="image/*,.pdf">
+                <button class="btn-login" style="width:100%" onclick="submitReport()">Upload Document</button>
+            </div>
+        `;
+        modal.classList.add('active');
+    }
 
-        function submitReport() {
-            const select = document.getElementById('reportType');
-            const type = select.value === 'Other' ? document.getElementById('customReportType').value : select.value;
-            const fileInput = document.getElementById('reportFile');
+    function submitReport() {
+        const type = document.getElementById('reportType').value;
+        const fileInput = document.getElementById('reportFile');
 
-            if(fileInput.files.length === 0) { alert("Please select a file."); return; }
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(fileInput.files[0]);
-            reader.onload = function () {
-                const base64String = reader.result;
-                db.collection('reports').add({
-                    patientId: currentUserData.uid,
-                    patientName: currentUserData.name,
-                    reportType: type,
-                    fileData: base64String,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    alert("Report Uploaded Successfully!");
-                    closeModal();
-                }).catch(err => alert("Error uploading: " + err.message));
-            };
-        }
+        if (fileInput.files.length === 0) { alert("Please select a file."); return; }
 
-        // --- B. PATIENT: MY REPORTS (NEW) ---
-        function openMyReports() {
-            modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading...</div>`;
-            modal.classList.add('active');
+        // Show loading state
+        document.querySelector('.btn-login').innerText = "Uploading...";
 
-            db.collection('reports')
+        const reader = new FileReader();
+        reader.readAsDataURL(fileInput.files[0]);
+        reader.onload = function () {
+            const base64String = reader.result;
+            db.collection('reports').add({
+                patientId: currentUserData.uid,
+                patientName: currentUserData.name,
+                reportType: type,
+                fileData: base64String,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("Report Uploaded Successfully!");
+                closeModal();
+            }).catch(err => {
+                alert("Error: " + err.message);
+                closeModal();
+            });
+        };
+    }
+
+    // --- B. PATIENT: MY REPORTS (FIXED LOADING) ---
+    function openMyReports() {
+        modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
+        modal.classList.add('active');
+
+        // Debug: Check which ID we are querying
+        console.log("Fetching reports for ID:", currentUserData.uid);
+
+        db.collection('reports')
             .where('patientId', '==', currentUserData.uid)
-            .orderBy('timestamp', 'desc')
             .get()
             .then(snap => {
                 const list = document.getElementById('myReportList');
-                list.innerHTML = '';
-                if(snap.empty) { list.innerHTML = '<p>No reports uploaded yet.</p>'; return; }
+                list.innerHTML = ''; // Clear "Loading" text
+
+                if (snap.empty) {
+                    list.innerHTML = `
+                    <div style="text-align:center; color:gray; padding:20px;">
+                        <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:10px;"></i>
+                        <p>No reports found.</p>
+                        <small>Uploaded files will appear here.</small>
+                    </div>`;
+                    return;
+                }
 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    
                     const div = document.createElement('div');
                     div.className = 'list-item';
                     div.innerHTML = `
                         <div>
                             <strong>${data.reportType}</strong><br>
-                            <small>${date}</small>
+                            <small>${new Date().toLocaleDateString()}</small>
                         </div>
-                        <a href="${data.fileData}" download="Report_${data.reportType}" class="list-btn btn-view" style="text-decoration:none; display:inline-block; text-align:center;">Download</a>
+                        <a href="${data.fileData}" download="Report" class="list-btn btn-view" style="text-decoration:none; text-align:center;">Download</a>
                     `;
                     list.appendChild(div);
                 });
+            })
+            .catch(error => {
+                document.getElementById('myReportList').innerHTML = `<p style="color:red">Error loading reports: ${error.message}</p>`;
             });
+    }
+
+    // --- C. PATIENT: FIND DOCTOR (FIXED: REMOVED FAKE DOCTORS) ---
+    function openFindDoctorModal() {
+        modalContent.innerHTML = `
+            <h2>Find a Specialist</h2>
+            <div id="doctorListContainer" style="margin-top:20px;">Loading doctors...</div>
+        `;
+        modal.classList.add('active');
+        loadDoctors();
+    }
+
+    async function loadDoctors() {
+        const container = document.getElementById('doctorListContainer');
+        
+        // 1. Get ONLY Real Doctors from DB
+        let realDoctors = [];
+        try {
+            const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
+            docSnap.forEach(doc => realDoctors.push({ id: doc.id, ...doc.data() }));
+        } catch (e) { 
+            container.innerHTML = `<p style="color:red">Error connecting to database.</p>`;
+            return;
         }
 
-        // --- C. PATIENT: FIND DOCTOR (FIXED) ---
-        function openFindDoctorModal() {
-            modalContent.innerHTML = `
-                <h2>Find a Specialist</h2>
-                <div id="doctorListContainer" style="margin-top:20px;">
-                    <p>Loading doctors...</p>
+        // 2. Get My Existing Appointments
+        let myApts = {};
+        try {
+            const aptSnap = await db.collection('appointments').where('patientId', '==', currentUserData.uid).get();
+            aptSnap.forEach(doc => {
+                const data = doc.data();
+                myApts[data.doctorId] = data.status;
+            });
+        } catch (e) { console.log(e); }
+
+        container.innerHTML = '';
+        if (realDoctors.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <p>No doctors are currently registered.</p>
+                    <small>Please register a new user as a 'Doctor' to test this.</small>
+                </div>`;
+            return;
+        }
+
+        realDoctors.forEach(doc => {
+            const displayName = doc.name || "Unknown Doctor";
+            const specialty = doc.special || "Specialist";
+            
+            let btnHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
+            
+            if (myApts[doc.id]) {
+                const status = myApts[doc.id];
+                let color = status === 'accepted' ? 'var(--secondary)' : '#F59E0B';
+                let label = status === 'accepted' ? 'Approved' : 'Requested';
+                btnHtml = `<button class="list-btn" style="background:${color}; color:white; cursor:default">${label}</button>`;
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `
+                <div>
+                    <strong>${displayName}</strong><br>
+                    <small style="color:gray">${specialty}</small>
                 </div>
+                ${btnHtml}
             `;
-            modal.classList.add('active');
-            loadDoctors();
-        }
+            container.appendChild(div);
+        });
+    }
 
-        async function loadDoctors() {
-            const container = document.getElementById('doctorListContainer');
-            container.innerHTML = 'Loading...';
-
-            let realDoctors = [];
-            try {
-                const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
-                docSnap.forEach(doc => realDoctors.push({ id: doc.id, ...doc.data() }));
-            } catch (e) { console.log("Error fetching docs", e); }
-
-            let myApts = {};
-            try {
-                const aptSnap = await db.collection('appointments').where('patientId', '==', currentUserData.uid).get();
-                aptSnap.forEach(doc => {
-                    const data = doc.data();
-                    myApts[data.doctorId] = data.status; 
-                });
-            } catch (e) { console.log("Error fetching apts", e); }
-
-            container.innerHTML = '';
-            if (realDoctors.length === 0) {
-                container.innerHTML = '<p>No doctors found in the system. (Create a doctor account to test)</p>';
-                return;
-            }
-
-            realDoctors.forEach(doc => {
-                const displayName = doc.name || "Unknown Doctor";
-                const specialty = doc.special || "General Specialist";
-                
-                let btnHtml = `<button class="list-btn btn-book" id="btn-${doc.id}" onclick="bookAppointment('${doc.id}', '${displayName}')">Book</button>`;
-                
-                if (myApts[doc.id]) {
-                    const status = myApts[doc.id];
-                    let color = status === 'accepted' ? 'var(--secondary)' : '#F59E0B'; 
-                    let label = status === 'accepted' ? 'Approved' : 'Requested';
-                    btnHtml = `<button class="list-btn" style="background:${color}; color:white; cursor:default">${label}</button>`;
+    function bookAppointment(docId, docName) {
+        if (confirm(`Book appointment with ${docName}?`)) {
+            db.collection('appointments').add({
+                patientId: currentUserData.uid,
+                patientName: currentUserData.name,
+                doctorId: docId, // This sends the request to the correct doctor
+                doctorName: docName,
+                status: 'pending',
+                requestDate: new Date().toISOString()
+            }).then(() => {
+                const btn = document.getElementById(`btn-${docId}`);
+                if (btn) {
+                    btn.innerText = "Requested";
+                    btn.style.background = "#F59E0B";
+                    btn.onclick = null;
                 }
-                
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <div>
-                        <strong>${displayName}</strong><br>
-                        <small style="color:gray">${specialty}</small>
-                    </div>
-                    ${btnHtml}
-                `;
-                container.appendChild(div);
             });
         }
+    }
 
-        function bookAppointment(docId, docName) {
-            if(confirm(`Book appointment with ${docName}?`)) {
-                db.collection('appointments').add({
-                    patientId: currentUserData.uid,
-                    patientName: currentUserData.name,
-                    doctorId: docId,
-                    doctorName: docName,
-                    status: 'pending',
-                    requestDate: new Date().toISOString()
-                }).then(() => {
-                    const btn = document.getElementById(`btn-${docId}`);
-                    if(btn) {
-                        btn.innerText = "Requested";
-                        btn.style.background = "#F59E0B";
-                        btn.onclick = null;
-                    }
-                });
-            }
-        }
+    // --- D. DOCTOR: APPOINTMENTS ---
+    function openAppointmentList() {
+        modalContent.innerHTML = `<h2>Incoming Appointments</h2><div id="aptList">Loading...</div>`;
+        modal.classList.add('active');
 
-        // --- D. DOCTOR: APPOINTMENTS ---
-        function openAppointmentList() {
-            modalContent.innerHTML = `<h2>Incoming Appointments</h2><div id="aptList">Loading...</div>`;
-            modal.classList.add('active');
+        // Query appointments where doctorId matches THIS doctor
+        db.collection('appointments')
+            .where('doctorId', '==', currentUserData.uid)
+            .get()
+            .then(snap => {
+                const list = document.getElementById('aptList');
+                list.innerHTML = '';
+                if (snap.empty) { list.innerHTML = '<p>No pending appointments.</p>'; return; }
 
-            db.collection('appointments')
-              .where('doctorId', '==', currentUserData.uid)
-              .where('status', '==', 'pending')
-              .get()
-              .then(snap => {
-                  const list = document.getElementById('aptList');
-                  list.innerHTML = '';
-                  if(snap.empty) { list.innerHTML = '<p>No pending appointments.</p>'; return; }
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    // Filter locally if status is needed, or show all
+                    if(data.status !== 'pending') return; 
 
-                  snap.forEach(doc => {
-                      const data = doc.data();
-                      const div = document.createElement('div');
-                      div.className = 'list-item';
-                      div.innerHTML = `
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
                         <div>
                             <strong>${data.patientName}</strong><br>
                             <small>Requested: ${new Date(data.requestDate).toLocaleDateString()}</small>
@@ -606,158 +596,164 @@
                             <button class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
                             <button class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
                         </div>
-                      `;
-                      list.appendChild(div);
-                  });
-              });
-        }
+                    `;
+                    list.appendChild(div);
+                });
+                if(list.innerHTML === '') list.innerHTML = '<p>No pending appointments.</p>';
+            });
+    }
 
-        function updateApt(aptId, status) {
-            db.collection('appointments').doc(aptId).update({ status: status })
-              .then(() => {
-                  alert("Appointment " + status);
-                  openAppointmentList(); 
-              });
-        }
+    function updateApt(aptId, status) {
+        db.collection('appointments').doc(aptId).update({ status: status })
+            .then(() => {
+                alert("Appointment " + status);
+                openAppointmentList();
+            });
+    }
 
-        // --- E. DOCTOR/PHARMACY: SEARCH PATIENT ---
-        function openPatientSearch() {
-            modalContent.innerHTML = `
-                <h2>Patient Lookup</h2>
-                <div class="modal-form">
-                    <input type="text" id="pharmacySearchInput" placeholder="Enter Patient Name...">
-                    <button class="btn-login" style="width:100%" onclick="performSearch()">Search</button>
-                </div>
-                <div id="pharmacyResults" style="margin-top:20px"></div>
-            `;
-            modal.classList.add('active');
-        }
+    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT (FIXED: ID PASSING) ---
+    function openPatientSearch() {
+        modalContent.innerHTML = `
+            <h2>Patient Lookup</h2>
+            <div class="modal-form">
+                <input type="text" id="pharmacySearchInput" placeholder="Enter Patient Name...">
+                <button class="btn-login" style="width:100%" onclick="performSearch()">Search</button>
+            </div>
+            <div id="pharmacyResults" style="margin-top:20px"></div>
+        `;
+        modal.classList.add('active');
+    }
 
-        function performSearch() {
-            const query = document.getElementById('pharmacySearchInput').value.toLowerCase();
-            const resultsDiv = document.getElementById('pharmacyResults');
-            resultsDiv.innerHTML = 'Searching...';
+    function performSearch() {
+        const query = document.getElementById('pharmacySearchInput').value.toLowerCase();
+        const resultsDiv = document.getElementById('pharmacyResults');
+        resultsDiv.innerHTML = 'Searching database...';
 
-            db.collection('users').where('role', '==', 'patient').get().then(snap => {
-                resultsDiv.innerHTML = '';
-                let found = false;
+        db.collection('users').where('role', '==', 'patient').get().then(snap => {
+            resultsDiv.innerHTML = '';
+            let found = false;
 
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const pName = (data.name || '').toLowerCase();
+            snap.forEach(doc => {
+                const data = doc.data();
+                const pName = (data.name || '').toLowerCase();
+                
+                if (pName.includes(query)) {
+                    found = true;
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
                     
-                    if(pName.includes(query)) {
-                        found = true;
-                        const div = document.createElement('div');
-                        div.className = 'list-item';
-                        
-                        const btnAction = currentUserData.role === 'doctor' 
-                            ? `openDoctorPatientView('${doc.id}', '${data.name}')`
-                            : `openPharmacyPatientView('${doc.id}', '${data.name}')`;
+                    // PASS THE CORRECT ID HERE
+                    const btnAction = currentUserData.role === 'doctor' 
+                        ? `openDoctorPatientView('${doc.id}', '${data.name}')`
+                        : `openPharmacyPatientView('${doc.id}', '${data.name}')`;
 
-                        div.innerHTML = `
-                            <div><strong>${data.name}</strong><br><small>ID: ${doc.id}</small></div>
-                            <button class="list-btn btn-view" onclick="${btnAction}">View Profile</button>
-                        `;
-                        resultsDiv.appendChild(div);
-                    }
-                });
-                if(!found) resultsDiv.innerHTML = '<p>No patients found.</p>';
+                    div.innerHTML = `
+                        <div><strong>${data.name}</strong><br><small>ID: ${doc.id}</small></div>
+                        <button class="list-btn btn-view" onclick="${btnAction}">View Profile</button>
+                    `;
+                    resultsDiv.appendChild(div);
+                }
             });
-        }
+            if (!found) resultsDiv.innerHTML = '<p>No patients found with that name.</p>';
+        });
+    }
 
-        // --- F. DOCTOR: PATIENT PROFILE VIEW ---
-        function openDoctorPatientView(patientId, patientName) {
-            modalContent.innerHTML = `
-                <h2>Patient: ${patientName}</h2>
-                <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                    <button class="list-btn" onclick="loadPatientReports('${patientId}')">Reports</button>
-                    <button class="list-btn btn-book" onclick="loadPatientPrescriptions('${patientId}', '${patientName}')">Prescriptions</button>
-                </div>
-                <div id="patientDetailContent">Select a tab above.</div>
-            `;
+    // --- F. DOCTOR: PATIENT PROFILE (FIXED TAB LOGIC) ---
+    function openDoctorPatientView(patientId, patientName) {
+        modalContent.innerHTML = `
+            <h2>Patient: ${patientName}</h2>
+            <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <button class="list-btn" onclick="loadPatientReports('${patientId}')" style="background:gray">Reports</button>
+                <button class="list-btn btn-book" onclick="loadPatientPrescriptions('${patientId}', '${patientName}')">Prescriptions</button>
+            </div>
+            <div id="patientDetailContent">Loading...</div>
+        `;
+        // Load Prescriptions by default
+        loadPatientPrescriptions(patientId, patientName);
+    }
+
+    function loadPatientReports(patientId) {
+        const container = document.getElementById('patientDetailContent');
+        container.innerHTML = 'Loading Reports...';
+        
+        db.collection('reports').where('patientId', '==', patientId).get().then(snap => {
+            container.innerHTML = '';
+            if (snap.empty) { container.innerHTML = '<p>No reports found for this patient.</p>'; return; }
+            snap.forEach(doc => {
+                const data = doc.data();
+                container.innerHTML += `
+                    <div class="list-item">
+                        <span>${data.reportType}</span>
+                        <a href="${data.fileData}" download="Report" class="list-btn btn-view">Download</a>
+                    </div>`;
+            });
+        });
+    }
+
+    function loadPatientPrescriptions(patientId, patientName) {
+        const container = document.getElementById('patientDetailContent');
+        container.innerHTML = `
+            <div style="background:#F3F4F6; padding:15px; border-radius:10px; margin-bottom:15px;">
+                <h4>Add Prescription</h4>
+                <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:8px;">
+                <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:8px;">
+                <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')">Add Prescription</button>
+            </div>
+            <h4>History</h4>
+            <div id="rxHistory">Loading history...</div>
+        `;
+        
+        db.collection('prescriptions').where('patientId', '==', patientId).orderBy('timestamp', 'desc').get().then(snap => {
+            const hist = document.getElementById('rxHistory');
+            hist.innerHTML = '';
+            if (snap.empty) { hist.innerHTML = '<p>No active prescriptions.</p>'; return; }
+            snap.forEach(doc => {
+                const data = doc.data();
+                hist.innerHTML += `
+                    <div class="list-item">
+                        <div>
+                            <strong>${data.medicine}</strong><br>
+                            <small>${data.dosage} - Dr. ${data.doctorName}</small>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    function addPrescription(patientId, patientName) {
+        const med = document.getElementById('rxMedicine').value;
+        const dose = document.getElementById('rxDosage').value;
+        if (!med || !dose) return alert("Fill all fields");
+        
+        db.collection('prescriptions').add({
+            patientId: patientId,
+            patientName: patientName,
+            medicine: med,
+            dosage: dose,
+            doctorId: currentUserData.uid,
+            doctorName: currentUserData.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            alert("Prescription Added");
             loadPatientPrescriptions(patientId, patientName);
-        }
+        });
+    }
 
-        function loadPatientReports(patientId) {
-            const container = document.getElementById('patientDetailContent');
-            container.innerHTML = 'Loading Reports...';
-            
-            db.collection('reports').where('patientId', '==', patientId).get().then(snap => {
-                container.innerHTML = '';
-                if(snap.empty) { container.innerHTML = '<p>No reports found for this patient.</p>'; return; }
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    container.innerHTML += `
-                        <div class="list-item">
-                            <span>${data.reportType}</span>
-                            <a href="${data.fileData}" download="Report" class="list-btn btn-view">View</a>
-                        </div>`;
-                });
-            });
-        }
-
-        function loadPatientPrescriptions(patientId, patientName) {
-            const container = document.getElementById('patientDetailContent');
-            container.innerHTML = `
-                <div style="background:#F3F4F6; padding:15px; border-radius:10px; margin-bottom:15px;">
-                    <h4>Add Prescription</h4>
-                    <input type="text" id="rxMedicine" placeholder="Medicine Name" style="width:100%; margin:5px 0; padding:8px;">
-                    <input type="text" id="rxDosage" placeholder="Dosage (e.g., 1-0-1 after food)" style="width:100%; margin:5px 0; padding:8px;">
-                    <button class="list-btn btn-book" onclick="addPrescription('${patientId}', '${patientName}')">Add Prescription</button>
-                </div>
-                <h4>History</h4>
-                <div id="rxHistory">Loading...</div>
-            `;
-            
-            db.collection('prescriptions').where('patientId', '==', patientId).orderBy('timestamp', 'desc').get().then(snap => {
-                const hist = document.getElementById('rxHistory');
-                hist.innerHTML = '';
-                if(snap.empty) { hist.innerHTML = '<p>No active prescriptions.</p>'; return; }
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    hist.innerHTML += `
-                        <div class="list-item">
-                            <div>
-                                <strong>${data.medicine}</strong><br>
-                                <small>${data.dosage} - Dr. ${data.doctorName}</small>
-                            </div>
-                        </div>`;
-                });
-            });
-        }
-
-        function addPrescription(patientId, patientName) {
-            const med = document.getElementById('rxMedicine').value;
-            const dose = document.getElementById('rxDosage').value;
-            if(!med || !dose) return alert("Fill all fields");
-            
-            db.collection('prescriptions').add({
-                patientId: patientId,
-                patientName: patientName,
-                medicine: med,
-                dosage: dose,
-                doctorId: currentUserData.uid,
-                doctorName: currentUserData.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert("Prescription Added");
-                loadPatientPrescriptions(patientId, patientName);
-            });
-        }
-
-        // --- G. PHARMACY: VIEW PRESCRIPTIONS ---
-        function openPharmacyPatientView(patientId, patientName) {
-            modalContent.innerHTML = `
-                <h2>Pharmacy: ${patientName}</h2>
-                <p>Active Prescriptions</p>
-                <div id="pharmRxList">Loading...</div>
-            `;
-            
-            db.collection('prescriptions').where('patientId', '==', patientId).orderBy('timestamp', 'desc').get().then(snap => {
+    // --- G. PHARMACY: VIEW PRESCRIPTIONS (FIXED LOADING) ---
+    function openPharmacyPatientView(patientId, patientName) {
+        modalContent.innerHTML = `
+            <h2>Pharmacy: ${patientName}</h2>
+            <p>Active Prescriptions</p>
+            <div id="pharmRxList">Loading prescriptions...</div>
+        `;
+        
+        db.collection('prescriptions')
+            .where('patientId', '==', patientId)
+            .get()
+            .then(snap => {
                 const list = document.getElementById('pharmRxList');
                 list.innerHTML = '';
-                if(snap.empty) { list.innerHTML = '<p>No prescriptions found.</p>'; return; }
+                if (snap.empty) { list.innerHTML = '<p>No prescriptions found.</p>'; return; }
                 
                 snap.forEach(doc => {
                     const data = doc.data();
@@ -771,9 +767,11 @@
                             <button class="list-btn btn-accept" onclick="alert('Dispensing...')">Dispense</button>
                         </div>`;
                 });
+            })
+            .catch(err => {
+                 document.getElementById('pharmRxList').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             });
-        }
-    </script>
-    </script>
+    }
+</script>
 </body>
 </html>
