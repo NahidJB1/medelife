@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* --- SHARED VARIABLES (From Index) --- */
+        /* --- SHARED VARIABLES --- */
         :root {
             --primary: #EF4444;       
             --secondary: #22C55E;     
@@ -84,11 +84,12 @@
         }
         .icon-patient { background: #DCFCE7; color: var(--secondary); }
         .icon-doc { background: #FEE2E2; color: var(--primary); }
+        .icon-pharmacy { background: #E0E7FF; color: #4F46E5; }
         
         .stat-info h3 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
         .stat-info p { color: var(--gray); font-size: 0.9rem; }
 
-        /* Role Specific Sections */
+        /* Actions */
         .action-section { margin-bottom: 2rem; animation: slideUp 1s ease-out backwards; }
         .section-title { font-size: 1.2rem; margin-bottom: 1rem; font-weight: 600; }
         
@@ -103,24 +104,7 @@
         .action-card h4 { margin-bottom: 0.5rem; }
         .action-card p { font-size: 0.85rem; color: var(--gray); }
 
-        /* Animations */
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); position: fixed; }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
-        }
-
-        /* --- ADD THIS TO YOUR CSS --- */
-        
-        /* Pharmacy Theme */
-        .icon-pharmacy { background: #E0E7FF; color: #4F46E5; }
-        
-        /* Modal Styles (Reuse from Index but customized for Dashboard) */
+        /* Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
@@ -140,7 +124,7 @@
             cursor: pointer; color: var(--gray);
         }
         
-        /* List Items for Doctors/Appointments */
+        /* List Items */
         .list-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px; border: 1px solid #E5E7EB; border-radius: 10px;
@@ -157,14 +141,24 @@
         .btn-accept { background: var(--secondary); color: white; margin-right: 5px;}
         .btn-decline { background: var(--primary); color: white; }
 
-        /* Form Elements inside Modal */
+        /* Form Elements */
         .modal-form label { display: block; margin-bottom: 8px; font-weight: 500; }
         .modal-form select, .modal-form input, .modal-form textarea {
             width: 100%; padding: 10px; border: 1px solid #E5E7EB; 
             border-radius: 8px; margin-bottom: 15px;
         }
 
+        /* Animations */
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); position: fixed; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
@@ -178,8 +172,7 @@
             <span>MED<span style="color:var(--secondary)">e</span>LIFE</span>
         </div>
 
-        <div class="nav-items" id="sidebarNav">
-            </div>
+        <div class="nav-items" id="sidebarNav"></div>
 
         <div class="user-mini-profile">
             <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
@@ -201,21 +194,18 @@
             </div>
         </header>
 
-        <div class="stats-grid" id="statsGrid">
-            </div>
+        <div class="stats-grid" id="statsGrid"></div>
 
         <div class="action-section">
             <div class="section-title" id="actionTitle">Quick Actions</div>
-            <div class="quick-actions" id="actionGrid">
-                </div>
+            <div class="quick-actions" id="actionGrid"></div>
         </div>
     </main>
 
     <div class="modal-overlay" id="dashboardModal">
         <div class="dashboard-modal">
             <span class="close-modal" onclick="closeModal()">&times;</span>
-            <div id="modalContent">
-                </div>
+            <div id="modalContent"></div>
         </div>
     </div>
 
@@ -223,6 +213,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
+    <script src="js/firebase-init.js"></script>
+
     <script>
     // --- 0. FIREBASE SETUP ---
     const db = firebase.firestore();
@@ -247,7 +239,6 @@
         // [CRITICAL FIX] Ensure ID stays the same across reloads
         let storedUid = localStorage.getItem('userUid');
         if (!storedUid) {
-            // Generate ID once and keep it forever
             storedUid = 'user_' + Math.floor(Math.random() * 1000000);
             localStorage.setItem('userUid', storedUid);
         }
@@ -258,7 +249,8 @@
             uid: storedUid
         };
 
-        console.log("Logged in as:", currentUserData); // Debugging
+        // Debug Log
+        console.log("Logged in as:", currentUserData); 
 
         // UI Header
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -282,7 +274,6 @@
 
     function logout() {
         localStorage.removeItem('isLoggedIn');
-        // Do NOT clear userUid so data persists for this browser
         window.location.href = 'index.html';
     }
 
@@ -305,7 +296,6 @@
             </div>
         `;
 
-        // FIXED: Added specific IDs to buttons to ensure clicks work
         document.getElementById('actionGrid').innerHTML = `
             <div class="action-card" onclick="openUploadModal()">
                 <i class="fas fa-file-upload"></i>
@@ -410,7 +400,6 @@
 
         if (fileInput.files.length === 0) { alert("Please select a file."); return; }
 
-        // Show loading state
         document.querySelector('.btn-login').innerText = "Uploading...";
 
         const reader = new FileReader();
@@ -433,20 +422,17 @@
         };
     }
 
-    // --- B. PATIENT: MY REPORTS (FIXED LOADING) ---
+    // --- B. PATIENT: MY REPORTS ---
     function openMyReports() {
         modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
         modal.classList.add('active');
-
-        // Debug: Check which ID we are querying
-        console.log("Fetching reports for ID:", currentUserData.uid);
 
         db.collection('reports')
             .where('patientId', '==', currentUserData.uid)
             .get()
             .then(snap => {
                 const list = document.getElementById('myReportList');
-                list.innerHTML = ''; // Clear "Loading" text
+                list.innerHTML = ''; 
 
                 if (snap.empty) {
                     list.innerHTML = `
@@ -477,7 +463,7 @@
             });
     }
 
-    // --- C. PATIENT: FIND DOCTOR (FIXED: REMOVED FAKE DOCTORS) ---
+    // --- C. PATIENT: FIND DOCTOR ---
     function openFindDoctorModal() {
         modalContent.innerHTML = `
             <h2>Find a Specialist</h2>
@@ -490,7 +476,7 @@
     async function loadDoctors() {
         const container = document.getElementById('doctorListContainer');
         
-        // 1. Get ONLY Real Doctors from DB
+        // 1. Get ONLY Real Doctors
         let realDoctors = [];
         try {
             const docSnap = await db.collection('users').where('role', '==', 'doctor').get();
@@ -551,7 +537,7 @@
             db.collection('appointments').add({
                 patientId: currentUserData.uid,
                 patientName: currentUserData.name,
-                doctorId: docId, // This sends the request to the correct doctor
+                doctorId: docId, 
                 doctorName: docName,
                 status: 'pending',
                 requestDate: new Date().toISOString()
@@ -571,7 +557,6 @@
         modalContent.innerHTML = `<h2>Incoming Appointments</h2><div id="aptList">Loading...</div>`;
         modal.classList.add('active');
 
-        // Query appointments where doctorId matches THIS doctor
         db.collection('appointments')
             .where('doctorId', '==', currentUserData.uid)
             .get()
@@ -582,7 +567,6 @@
 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    // Filter locally if status is needed, or show all
                     if(data.status !== 'pending') return; 
 
                     const div = document.createElement('div');
@@ -611,7 +595,7 @@
             });
     }
 
-    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT (FIXED: ID PASSING) ---
+    // --- E. DOCTOR/PHARMACY: SEARCH PATIENT ---
     function openPatientSearch() {
         modalContent.innerHTML = `
             <h2>Patient Lookup</h2>
@@ -642,7 +626,6 @@
                     const div = document.createElement('div');
                     div.className = 'list-item';
                     
-                    // PASS THE CORRECT ID HERE
                     const btnAction = currentUserData.role === 'doctor' 
                         ? `openDoctorPatientView('${doc.id}', '${data.name}')`
                         : `openPharmacyPatientView('${doc.id}', '${data.name}')`;
@@ -658,7 +641,7 @@
         });
     }
 
-    // --- F. DOCTOR: PATIENT PROFILE (FIXED TAB LOGIC) ---
+    // --- F. DOCTOR: PATIENT PROFILE ---
     function openDoctorPatientView(patientId, patientName) {
         modalContent.innerHTML = `
             <h2>Patient: ${patientName}</h2>
@@ -668,7 +651,6 @@
             </div>
             <div id="patientDetailContent">Loading...</div>
         `;
-        // Load Prescriptions by default
         loadPatientPrescriptions(patientId, patientName);
     }
 
@@ -739,7 +721,7 @@
         });
     }
 
-    // --- G. PHARMACY: VIEW PRESCRIPTIONS (FIXED LOADING) ---
+    // --- G. PHARMACY: VIEW PRESCRIPTIONS ---
     function openPharmacyPatientView(patientId, patientName) {
         modalContent.innerHTML = `
             <h2>Pharmacy: ${patientName}</h2>
@@ -772,6 +754,6 @@
                  document.getElementById('pharmRxList').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             });
     }
-</script>
+    </script>
 </body>
 </html>
