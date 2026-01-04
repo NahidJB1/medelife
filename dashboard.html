@@ -186,6 +186,70 @@
             border-radius: 12px; margin-bottom: 15px; outline: none;
             font-family: 'Poppins', sans-serif;
         }
+
+
+        /* --- REDESIGN: Modern Upload Area (Patient) --- */
+.modern-upload-box {
+    border: 2px dashed #E5E7EB; border-radius: 16px;
+    padding: 40px 20px; text-align: center;
+    background: #F9FAFB; cursor: pointer;
+    transition: all 0.3s ease; position: relative;
+    margin-bottom: 20px;
+}
+.modern-upload-box:hover {
+    border-color: var(--primary); background: #FEF2F2;
+}
+.modern-upload-box i {
+    font-size: 3rem; color: #9CA3AF; margin-bottom: 15px; transition: 0.3s;
+}
+.modern-upload-box:hover i { color: var(--primary); transform: scale(1.1); }
+.modern-upload-box p { font-weight: 500; color: #4B5563; }
+.modern-upload-box small { color: #9CA3AF; display: block; margin-top: 5px; }
+
+/* Hidden file input that covers the box */
+.file-input-hidden {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
+}
+.file-name-display {
+    display: inline-block; margin-top: 10px;
+    padding: 5px 12px; background: white; border-radius: 20px;
+    font-size: 0.85rem; color: var(--primary);
+    border: 1px solid #FEE2E2; font-weight: 600;
+}
+
+/* --- REDESIGN: Modern Search Bar (Doc/Pharmacy) --- */
+.modern-search-bar {
+    position: relative; width: 100%; margin-bottom: 25px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-radius: 50px; background: white;
+    display: flex; align-items: center; padding: 5px;
+    border: 1px solid transparent; transition: 0.3s;
+}
+.modern-search-bar:focus-within {
+    border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.2);
+}
+.search-icon {
+    padding-left: 20px; color: #9CA3AF; font-size: 1.2rem;
+}
+.search-input-field {
+    flex: 1; border: none; padding: 15px;
+    font-size: 1rem; border-radius: 50px; outline: none;
+    background: transparent;
+}
+.search-btn-modern {
+    background: var(--dark); color: white; border: none;
+    padding: 12px 25px; border-radius: 40px;
+    font-weight: 600; cursor: pointer; transition: 0.3s;
+    margin-right: 5px;
+}
+.search-btn-modern:hover { background: var(--primary); transform: translateX(-2px); }
+
+/* --- NEW BUTTON: Time Clock Icon --- */
+.btn-time {
+    background: #F59E0B; color: white; margin-right: 5px; padding: 8px 12px;
+}
+.btn-time:hover { background: #D97706; }
     </style>
 </head>
 <body>
@@ -466,17 +530,57 @@
         setTimeout(() => box.classList.remove('show'), 3000);
     }
     
-    // --- UPLOAD REPORT ---
     function openUploadModal() {
-        modalContent.innerHTML = `
-            <h2>Upload Document</h2>
-            <div class="modal-form">
-                <label>Type</label><select id="reportType"><option>X-Ray</option><option>ECG</option><option>Lab Test</option></select>
-                <input type="file" id="reportFile" accept="image/*,.pdf" style="margin-top:10px;">
-                <button class="list-btn btn-book" style="width:100%; margin-top:10px;" onclick="submitReport()">Submit</button>
-            </div>`;
-        modal.classList.add('active');
+    modalContent.innerHTML = `
+        <h2 style="margin-bottom:20px;">Upload Document</h2>
+        <div class="modal-form">
+            <label>Type of Document</label>
+            <select id="reportType">
+                <option value="X-Ray">X-Ray / Scan</option>
+                <option value="ECG">ECG Report</option>
+                <option value="Blood Test">Blood / Lab Test</option>
+                <option value="Prescription">Old Prescription</option>
+            </select>
+            
+            <div class="modern-upload-box">
+                <input type="file" id="reportFile" class="file-input-hidden" accept="image/*,.pdf" onchange="updateFileDisplay(this)">
+                <div id="uploadContentUi">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click or Drag file here to upload</p>
+                    <small>Supports: PDF, JPG, PNG</small>
+                </div>
+            </div>
+
+            <div id="fileSelectedName" style="text-align:center; margin-bottom:15px; display:none;">
+                <span class="file-name-display" id="fNameText"></span>
+            </div>
+
+            <button class="list-btn btn-book" id="btn-upload-action" style="width:100%; padding:15px; font-size:1rem;" onclick="submitReport()">
+                <i class="fas fa-check"></i> Submit Report
+            </button>
+        </div>
+    `;
+    modal.classList.add('active');
+}
+
+function updateFileDisplay(input) {
+    const display = document.getElementById('fNameText');
+    const wrapper = document.getElementById('fileSelectedName');
+    
+    if(input.files && input.files[0]) {
+        display.innerText = input.files[0].name;
+        wrapper.style.display = 'block';
+        
+        // Visual feedback on the box
+        const box = document.querySelector('.modern-upload-box');
+        const icon = document.querySelector('.modern-upload-box i');
+        
+        box.style.borderColor = 'var(--secondary)';
+        box.style.background = '#F0FDF4';
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = 'var(--secondary)';
     }
+}
     function submitReport() {
         const file = document.getElementById('reportFile').files[0];
         if(!file) { showToast("Select a file first."); return; }
@@ -528,54 +632,152 @@
 
     // --- MY REPORTS ---
     function openMyReports() {
-        modalContent.innerHTML = `<h2>My Reports</h2><div id="repList">Loading...</div>`;
-        modal.classList.add('active');
-        db.collection('reports').where('patientId','==',currentUserData.uid).get().then(snap => {
-            const l = document.getElementById('repList'); l.innerHTML = '';
-            if(snap.empty) l.innerHTML = '<p>No reports.</p>';
-            snap.forEach(doc => {
-                const d = doc.data();
-                l.innerHTML += `<div class="list-item"><span>${d.reportType}</span><button class="list-btn btn-view" onclick="window.open('${d.fileData}')">View</button></div>`;
-            });
-        });
-    }
+    modalContent.innerHTML = `<h2>My Medical Reports</h2><div id="myReportList" style="margin-top:15px">Loading your reports...</div>`;
+    modal.classList.add('active');
 
-    // --- DOCTOR: APPOINTMENTS ---
-    function openAppointmentList(status) {
-        modalContent.innerHTML = `<h2>${status}</h2><div id="alist">Loading...</div>`;
-        modal.classList.add('active');
-        db.collection('appointments').where('doctorId','==',currentUserData.uid).where('status','==',status).get().then(snap => {
-            const l = document.getElementById('alist'); l.innerHTML = '';
-            if(snap.empty) l.innerHTML = '<p>None found.</p>';
+    db.collection('reports')
+        .where('patientId', '==', currentUserData.uid)
+        .get()
+        .then(snap => {
+            const list = document.getElementById('myReportList');
+            list.innerHTML = ''; 
+
+            if (snap.empty) {
+                list.innerHTML = `
+                <div style="text-align:center; color:gray; padding:20px;">
+                    <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:10px;"></i>
+                    <p>No reports found.</p>
+                </div>`;
+                return;
+            }
+
             snap.forEach(doc => {
-                const d = doc.data();
-                const btns = status === 'pending' ? 
-                    `<button class="list-btn btn-accept" onclick="updApt('${doc.id}','accepted')">Accept</button>` :
-                    `<button class="list-btn btn-cancel" onclick="updApt('${doc.id}','cancelled')">Cancel</button>`;
-                l.innerHTML += `<div class="list-item"><span>${d.patientName}</span><div>${btns}</div></div>`;
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                
+                div.innerHTML = `
+                    <div>
+                        <strong>${data.reportType}</strong><br>
+                        <small>${new Date().toLocaleDateString()}</small>
+                    </div>
+                    <div>
+                        <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View</button>
+                        <a href="${data.fileData}" download="MyReport_${data.reportType}" class="list-btn btn-book" style="text-decoration:none; margin-left:5px; display:inline-block;">Download</a>
+                    </div>
+                `;
+                list.appendChild(div);
             });
+        })
+        .catch(error => {
+            document.getElementById('myReportList').innerHTML = `<p style="color:red">Error loading reports: ${error.message}</p>`;
         });
+}
+
+// Fixed View Function
+function openReportInNewWindow(base64Data) {
+    const win = window.open();
+    if (win) {
+        // We write an iframe that fills the window
+        win.document.write(`
+            <html>
+                <body style="margin:0; display:flex; justify-content:center; align-items:center; background:#333; height:100vh;">
+                    <iframe src="${base64Data}" style="border:none; width:100%; height:100%; background:white;"></iframe>
+                </body>
+            </html>
+        `);
+    } else {
+        alert("Pop-up blocked! Please allow pop-ups to view reports.");
     }
-    function updApt(id, st) {
+}
+
+    function openAppointmentList(filterType) {
+    const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
+    modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
+    modal.classList.add('active');
+
+    db.collection('appointments')
+        .where('doctorId', '==', currentUserData.uid)
+        .get()
+        .then(snap => {
+            const list = document.getElementById('aptList');
+            list.innerHTML = '';
+            
+            let count = 0;
+            
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data.status !== filterType) return; 
+                count++;
+
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                
+                let actionButtons = '';
+
+                if(filterType === 'pending') {
+                    // Pending Actions (Accept/Decline)
+                    actionButtons = `
+                        <button id="btn-accept-${doc.id}" class="list-btn btn-accept" onclick="updateApt('${doc.id}', 'accepted')">Accept</button>
+                        <button id="btn-decline-${doc.id}" class="list-btn btn-decline" onclick="updateApt('${doc.id}', 'declined')">Decline</button>
+                    `;
+                } else {
+                    // Accepted Actions (Time | Profile | Cancel)
+                    // 1. Clock Button (Set Time)
+                    // 2. Open Profile
+                    // 3. Cancel Button
+                    
+                    actionButtons = `
+                        <button class="list-btn btn-time" title="Set Time" onclick="openTimePicker('${doc.id}')"><i class="fas fa-clock"></i></button>
+                        <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}', '${data.patientName}')">Profile</button>
+                        <button class="list-btn btn-cancel" onclick="cancelAppointment('${doc.id}', 'doctor')">Cancel</button>
+                    `;
+                    
+                    // Add visual indicator if time is set
+                    if(data.scheduledTime) {
+                        div.style.borderLeft = "4px solid var(--secondary)";
+                    }
+                }
+
+                div.innerHTML = `
+                    <div>
+                        <strong>${data.patientName}</strong><br>
+                        <small>${filterType === 'pending' ? 'Requested' : 'Booked'}: ${new Date(data.requestDate).toLocaleDateString()}</small>
+                        ${data.scheduledTime ? `<br><small style="color:#2563EB; font-weight:600;"><i class="far fa-clock"></i> Time: ${data.scheduledTime}</small>` : ''}
+                    </div>
+                    <div style="text-align:right; display:flex; align-items:center; justify-content:flex-end;">
+                        ${actionButtons}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            if(count === 0) list.innerHTML = `<p>No ${filterType} appointments found.</p>`;
+        });
+}
+
+
+    function updateApt(id, st) {
         db.collection('appointments').doc(id).update({status:st}).then(() => { showToast("Updated"); closeModal(); });
     }
 
     // --- PATIENT SEARCH ---
     function openPatientSearch() {
-        modalContent.innerHTML = `<h2>Search Patient</h2><input type="text" id="pSearch" placeholder="Name" onchange="runSearch()"><div id="pRes"></div>`;
-        modal.classList.add('active');
-    }
-    function runSearch() {
-        const q = document.getElementById('pSearch').value.toLowerCase();
-        db.collection('users').where('role','==','patient').get().then(snap => {
-            const r = document.getElementById('pRes'); r.innerHTML = '';
-            snap.forEach(doc => {
-                if(doc.data().name.toLowerCase().includes(q)) {
-                    r.innerHTML += `<div class="list-item"><span>${doc.data().name}</span><button class="list-btn btn-view">View</button></div>`;
-                }
-            });
-        });
-    }
+    modalContent.innerHTML = `
+        <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
+        
+        <div class="modern-search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name..." autocomplete="off">
+            <button class="search-btn-modern" onclick="performSearch()">Search</button>
+        </div>
+
+        <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
+    `;
+    modal.classList.add('active');
+    // Auto-focus the input
+    setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
+}
 
     // --- UTILS ---
     async function syncUserWithDB() {
@@ -587,6 +789,134 @@
     }
     function loadNotifications() {
         document.getElementById('notificationList').innerHTML = '<p style="color:gray">No new notifications.</p>';
+    }
+
+    /* --- MISSING LOGIC FUNCTIONS --- */
+
+    // 1. FIX: Naming mismatch (Calls updateApt, but you had updApt)
+    function updateApt(id, status) {
+        db.collection('appointments').doc(id).update({ status: status })
+            .then(() => {
+                showToast("Appointment " + status);
+                openAppointmentList('pending'); // Refresh list
+            });
+    }
+
+    // 2. LOGIC: Clock Icon (Set Time)
+    function openTimePicker(docId) {
+        // Simple prompt for now (can be upgraded to a fancy input later)
+        const time = prompt("Enter the time for this appointment (e.g., 10:30 AM):");
+        if (time && time.trim() !== "") {
+            db.collection('appointments').doc(docId).update({
+                scheduledTime: time
+            }).then(() => {
+                showToast("Time scheduled successfully!");
+                openAppointmentList('accepted'); // Refresh the view to show the time
+            });
+        }
+    }
+
+    // 3. LOGIC: Search Bar (Doctor & Pharmacy)
+    function performSearch() {
+        const query = document.getElementById('pharmacySearchInput').value.toLowerCase().trim();
+        const resultsDiv = document.getElementById('pharmacyResults');
+        
+        if (!query) { showToast("Please enter a name"); return; }
+        
+        resultsDiv.innerHTML = '<div style="text-align:center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+
+        // NOTE: Firestore doesn't support native "contains" searching easily. 
+        // For this demo, we get patients and filter them in JavaScript.
+        db.collection('users').where('role', '==', 'patient').get().then(snap => {
+            resultsDiv.innerHTML = '';
+            let foundCount = 0;
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data.name.toLowerCase().includes(query)) {
+                    foundCount++;
+                    
+                    // Different actions based on who is searching
+                    let actionButton = '';
+                    if (currentUserData.role === 'doctor') {
+                        actionButton = `<button class="list-btn btn-view" onclick="openDoctorPatientView('${doc.id}', '${data.name}')">View Profile</button>`;
+                    } else if (currentUserData.role === 'pharmacy') {
+                        actionButton = `<small style="color:green; font-weight:600;">Active Member</small>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-user" style="color:#9CA3AF"></i>
+                            </div>
+                            <div>
+                                <strong>${data.name}</strong><br>
+                                <small>Patient ID: ${doc.id.substring(0,5)}...</small>
+                            </div>
+                        </div>
+                        ${actionButton}
+                    `;
+                    resultsDiv.appendChild(div);
+                }
+            });
+
+            if (foundCount === 0) {
+                resultsDiv.innerHTML = '<p style="text-align:center; color:gray;">No patients found with that name.</p>';
+            }
+        });
+    }
+
+    // 4. LOGIC: View Patient Profile (For Doctor)
+    function openDoctorPatientView(patientId, patientName) {
+        // Reuse the modal to show specific patient data
+        modalContent.innerHTML = `
+            <h2>Patient: ${patientName}</h2>
+            <div class="dashboard-tabs" style="margin-bottom:15px; border-bottom:1px solid #eee;">
+                <div class="tab-item active" style="font-size:0.9rem;">Medical History</div>
+            </div>
+            <div id="patientHistoryList">Loading records...</div>
+        `;
+        
+        // Fetch reports uploaded by this patient
+        db.collection('reports')
+            .where('patientId', '==', patientId)
+            .orderBy('timestamp', 'desc')
+            .get()
+            .then(snap => {
+                const list = document.getElementById('patientHistoryList');
+                list.innerHTML = '';
+                
+                if (snap.empty) {
+                    list.innerHTML = '<p style="color:gray;">No medical records uploaded by this patient.</p>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    list.innerHTML += `
+                        <div class="list-item">
+                            <div>
+                                <strong>${data.reportType}</strong><br>
+                                <small>${new Date(data.timestamp?.toDate()).toLocaleDateString()}</small>
+                            </div>
+                            <button class="list-btn btn-view" onclick="openReportInNewWindow('${data.fileData}')">View Report</button>
+                        </div>
+                    `;
+                });
+            });
+    }
+
+    // 5. LOGIC: Cancel Appointment
+    function cancelAppointment(aptId, initiatedBy) {
+        if(confirm("Are you sure you want to cancel this appointment?")) {
+            db.collection('appointments').doc(aptId).delete().then(() => {
+                showToast("Appointment cancelled.");
+                // Refresh the view
+                if(initiatedBy === 'doctor') openAppointmentList('accepted');
+            });
+        }
     }
     </script>
 </body>
