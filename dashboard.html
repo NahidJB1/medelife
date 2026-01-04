@@ -920,8 +920,8 @@ function openReportInNewWindow(base64Data) {
     }
 
     // 4. LOGIC: View Patient Profile (For Doctor)
+    // 4. FIX: View Patient Profile (Now sorts in JS to avoid database lock)
     function openDoctorPatientView(patientId, patientName) {
-        // Reuse the modal to show specific patient data
         modalContent.innerHTML = `
             <h2>Patient: ${patientName}</h2>
             <div class="dashboard-tabs" style="margin-bottom:15px; border-bottom:1px solid #eee;">
@@ -930,22 +930,31 @@ function openReportInNewWindow(base64Data) {
             <div id="patientHistoryList">Loading records...</div>
         `;
         
-        // Fetch reports uploaded by this patient
+        // FIX: Removed .orderBy('timestamp', 'desc') to prevent index error
         db.collection('reports')
             .where('patientId', '==', patientId)
-            .orderBy('timestamp', 'desc')
             .get()
             .then(snap => {
                 const list = document.getElementById('patientHistoryList');
                 list.innerHTML = '';
                 
                 if (snap.empty) {
-                    list.innerHTML = '<p style="color:gray;">No medical records uploaded by this patient.</p>';
+                    list.innerHTML = '<p style="color:gray; padding:10px;">No medical records uploaded by this patient.</p>';
                     return;
                 }
 
-                snap.forEach(doc => {
-                    const data = doc.data();
+                // Convert to array and sort by time (Newest first)
+                let reports = [];
+                snap.forEach(doc => reports.push(doc.data()));
+                
+                // Sort logic: Handle Firestore timestamps safely
+                reports.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                    const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                    return timeB - timeA;
+                });
+
+                reports.forEach(data => {
                     list.innerHTML += `
                         <div class="list-item">
                             <div>
@@ -956,6 +965,10 @@ function openReportInNewWindow(base64Data) {
                         </div>
                     `;
                 });
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('patientHistoryList').innerHTML = '<p style="color:red">Error loading history.</p>';
             });
     }
 
