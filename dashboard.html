@@ -324,39 +324,43 @@
     const modal = document.getElementById('dashboardModal');
     const modalContent = document.getElementById('modalContent');
 
-    document.addEventListener("DOMContentLoaded", () => {
-        initDashboard();
-    });
-
-    async function initDashboard() {
-        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-        if (!isLoggedIn) { window.location.href = 'index.html'; return; }
-
+    /* REPLACE your existing initDashboard logic (variable setup section) with this: */
+    
         const role = localStorage.getItem('userRole') || 'patient';
         const name = localStorage.getItem('userName') || 'User';
-        let storedUid = localStorage.getItem('userUid');
-        if (!storedUid) { storedUid = 'user_' + Math.floor(Math.random() * 1000000); localStorage.setItem('userUid', storedUid); }
+        
+        // 1. FIX: Use Email as the Unique ID (Persistent)
+        // We assume your login page saves 'userEmail'. If not, it falls back to a random ID.
+        let storedEmail = localStorage.getItem('userEmail');
+        let stableId = storedEmail ? storedEmail.replace(/[.#$[\]]/g, '_') : null; // Sanitize email for DB keys
 
-        currentUserData = { name: name, role: role, uid: storedUid };
-
-        // Header Info
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('welcomeTitle').innerHTML = `Welcome back, <span style="color: var(--primary)">${name}</span>`;
-        document.getElementById('sideName').innerText = name;
-        document.getElementById('sideRole').innerText = role.toUpperCase();
-
-        const savedJSON = localStorage.getItem('userProfileData');
-        if (savedJSON) {
-            const data = JSON.parse(savedJSON);
-            if (data.photo) document.getElementById('sideAvatar').src = data.photo;
+        if (!stableId) {
+            // Fallback for testing if no email found
+            let existingRandom = localStorage.getItem('userUid');
+            stableId = existingRandom || 'user_' + Math.floor(Math.random() * 1000000);
+            if(!existingRandom) localStorage.setItem('userUid', stableId);
         }
 
-        await syncUserWithDB();
+        // Save email in our global data object
+        currentUserData = { 
+            name: name, 
+            role: role, 
+            uid: stableId, 
+            email: storedEmail || 'No Email' 
+        };
 
-        // Render Initial View
-        if (role === 'doctor') renderDoctorView();
-        else if (role === 'pharmacy') renderPharmacyView();
-        else renderPatientView();
+    /* ... rest of header code remains the same ... */
+
+    /* AND REPLACE your syncUserWithDB function (at the bottom of script) with this: */
+    
+    async function syncUserWithDB() {
+        // Saves the Email to DB so Doctors can search it
+        const userRef = db.collection('users').doc(currentUserData.uid);
+        await userRef.set({
+            name: currentUserData.name, 
+            role: currentUserData.role,
+            email: currentUserData.email // Important for search
+        }, { merge: true });
     }
 
     // --- VIEW RENDERING ---
@@ -866,21 +870,20 @@ function openReportInNewWindow(base64Data) {
 
     // --- PATIENT SEARCH ---
     function openPatientSearch() {
-    modalContent.innerHTML = `
-        <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
-        
-        <div class="modern-search-bar">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Search by patient name..." autocomplete="off">
-            <button class="search-btn-modern" onclick="performSearch()">Search</button>
-        </div>
+        modalContent.innerHTML = `
+            <h2 style="margin-bottom:20px; text-align:center;">Patient Lookup</h2>
+            
+            <div class="modern-search-bar">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="pharmacySearchInput" class="search-input-field" placeholder="Enter Patient Email ID..." autocomplete="off">
+                <button class="search-btn-modern" onclick="performSearch()">Search</button>
+            </div>
 
-        <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
-    `;
-    modal.classList.add('active');
-    // Auto-focus the input
-    setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
-}
+            <div id="pharmacyResults" style="margin-top:20px; max-height: 400px; overflow-y:auto;"></div>
+        `;
+        modal.classList.add('active');
+        setTimeout(() => document.getElementById('pharmacySearchInput').focus(), 300);
+    }
 
     // --- UTILS ---
     async function syncUserWithDB() {
@@ -924,73 +927,65 @@ function openReportInNewWindow(base64Data) {
     }
 
     // 3. LOGIC: Search Bar (Doctor & Pharmacy)
-    // FIX: Search Bar (Robust Version - Solves "toLowerCase" error)
-function performSearch() {
-    const input = document.getElementById('pharmacySearchInput');
-    if(!input) return; 
-    
-    const query = input.value.toLowerCase().trim();
-    const resultsDiv = document.getElementById('pharmacyResults');
-    
-    if (!query) { showToast("Please enter a name"); return; }
-    
-    resultsDiv.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching database...</div>';
+    // FIX: Search by Email (Instant Speed & Unique)
+    function performSearch() {
+        const input = document.getElementById('pharmacySearchInput');
+        if(!input) return; 
+        
+        // Sanitize: Trim spaces and lowercase
+        const queryEmail = input.value.trim(); 
+        const resultsDiv = document.getElementById('pharmacyResults');
+        
+        if (!queryEmail) { showToast("Please enter an email"); return; }
+        
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching database...</div>';
 
-    db.collection('users').where('role', '==', 'patient').get()
-    .then(snap => {
-        resultsDiv.innerHTML = '';
-        let foundCount = 0;
+        // SPEED UP: Direct query for the 'email' field. 
+        // This is O(1) speed (instant), unlike the previous loop.
+        db.collection('users')
+            .where('email', '==', queryEmail)
+            .get()
+            .then(snap => {
+                resultsDiv.innerHTML = '';
 
-        if (snap.empty) {
-            resultsDiv.innerHTML = '<p style="text-align:center; color:gray;">No patients found.</p>';
-            return;
-        }
-
-        snap.forEach(doc => {
-            const data = doc.data();
-            
-            // --- THE FIX IS HERE ---
-            // We use (data.name || '') to force an empty string if name is missing.
-            // This prevents the "undefined" crash.
-            const dbName = (data.name || '').toLowerCase();
-            
-            if (dbName.includes(query)) {
-                foundCount++;
-                
-                let actionButton = '';
-                if (currentUserData.role === 'doctor') {
-                    actionButton = `<button class="list-btn btn-view" onclick="openDoctorPatientView('${doc.id}', '${data.name}')">View Profile</button>`;
-                } else if (currentUserData.role === 'pharmacy') {
-                    actionButton = `<small style="color:green; font-weight:600;"><i class="fas fa-check-circle"></i> Registered</small>`;
+                if (snap.empty) {
+                    resultsDiv.innerHTML = '<p style="text-align:center; color:gray;">No patient found with that email.</p>';
+                    return;
                 }
 
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                            <i class="fas fa-user" style="color:#9CA3AF"></i>
-                        </div>
-                        <div>
-                            <strong>${data.name || 'Unknown'}</strong><br>
-                            <small>Patient ID: ...${doc.id.substr(-4)}</small>
-                        </div>
-                    </div>
-                    ${actionButton}
-                `;
-                resultsDiv.appendChild(div);
-            }
-        });
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    
+                    // Button Logic
+                    let actionButton = '';
+                    if (currentUserData.role === 'doctor') {
+                        actionButton = `<button class="list-btn btn-view" onclick="openDoctorPatientView('${doc.id}', '${data.name}')">View Profile</button>`;
+                    } else if (currentUserData.role === 'pharmacy') {
+                        actionButton = `<small style="color:green; font-weight:600;"><i class="fas fa-check-circle"></i> Registered</small>`;
+                    }
 
-        if (foundCount === 0) {
-            resultsDiv.innerHTML = `<p style="text-align:center; color:gray;">No patients found matching "${query}".</p>`;
-        }
-    })
-    .catch(err => {
-        console.error("Search error:", err);
-        resultsDiv.innerHTML = '<p style="color:red; text-align:center">Error occurred during search.</p>';
-    });
-}
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-envelope" style="color:#9CA3AF"></i>
+                            </div>
+                            <div>
+                                <strong>${data.name}</strong><br>
+                                <small>${data.email || 'No Email'}</small>
+                            </div>
+                        </div>
+                        ${actionButton}
+                    `;
+                    resultsDiv.appendChild(div);
+                });
+            })
+            .catch(err => {
+                console.error("Search error:", err);
+                resultsDiv.innerHTML = '<p style="color:red; text-align:center">Error occurred during search.</p>';
+            });
+    }
 
     // 4. LOGIC: View Patient Profile (For Doctor)
     // FIX: View Patient Profile (Solves "Index" error by sorting in JS)
