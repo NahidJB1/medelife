@@ -616,15 +616,13 @@ function updateFileDisplay(input) {
         }).then(() => { showToast("Request Sent!"); closeModal(); });
     }
 
-    // --- VIEW SCHEDULE ---
     function openPatientSchedule() {
     modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
     modal.classList.add('active');
     
-    // FIX: Removed .where('status','==','accepted') so we can see Pending too
+    // 1. FIX: Removed .orderBy from here to prevent "Missing Index" error
     db.collection('appointments')
         .where('patientId', '==', currentUserData.uid)
-        .orderBy('requestDate', 'desc') // Show newest first
         .get()
         .then(snap => {
             const l = document.getElementById('schedList'); 
@@ -635,9 +633,17 @@ function updateFileDisplay(input) {
                 return;
             }
 
+            // 2. FIX: Convert snapshot to array so we can sort in JavaScript
+            let apps = [];
             snap.forEach(doc => {
-                const d = doc.data();
-                
+                apps.push(doc.data());
+            });
+
+            // 3. FIX: Sort by date (Newest first) using JavaScript
+            apps.sort((a, b) => new Date(b.requestDate) - new Date(a.requestDate));
+
+            // Render the sorted list
+            apps.forEach(d => {
                 // Status Logic
                 let statusBadge = '';
                 let timeDisplay = '';
@@ -665,6 +671,11 @@ function updateFileDisplay(input) {
                         </div>
                     </div>`;
             });
+        })
+        .catch(error => {
+            // 4. FIX: Added error handling so it doesn't just get stuck on "Loading"
+            console.error("Error loading schedule:", error);
+            document.getElementById('schedList').innerHTML = `<p style="color:red; text-align:center;">Error: ${error.message}</p>`;
         });
 }
 
