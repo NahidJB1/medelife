@@ -618,17 +618,55 @@ function updateFileDisplay(input) {
 
     // --- VIEW SCHEDULE ---
     function openPatientSchedule() {
-        modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
-        modal.classList.add('active');
-        db.collection('appointments').where('patientId','==',currentUserData.uid).where('status','==','accepted').get().then(snap => {
-            const l = document.getElementById('schedList'); l.innerHTML = '';
-            if(snap.empty) l.innerHTML = '<p>No confirmed appointments.</p>';
+    modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
+    modal.classList.add('active');
+    
+    // FIX: Removed .where('status','==','accepted') so we can see Pending too
+    db.collection('appointments')
+        .where('patientId', '==', currentUserData.uid)
+        .orderBy('requestDate', 'desc') // Show newest first
+        .get()
+        .then(snap => {
+            const l = document.getElementById('schedList'); 
+            l.innerHTML = '';
+            
+            if(snap.empty) {
+                l.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">No appointments found.</p>';
+                return;
+            }
+
             snap.forEach(doc => {
                 const d = doc.data();
-                l.innerHTML += `<div class="list-item"><span>Dr. ${d.doctorName}</span><span style="color:blue">${d.scheduledTime || 'Time pending'}</span></div>`;
+                
+                // Status Logic
+                let statusBadge = '';
+                let timeDisplay = '';
+
+                if (d.status === 'pending') {
+                    statusBadge = `<span style="background:#FEF3C7; color:#D97706; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600;">Pending Approval</span>`;
+                    timeDisplay = `<span style="color:gray; font-size:0.85rem;">Waiting for doctor...</span>`;
+                } else if (d.status === 'accepted') {
+                    statusBadge = `<span style="background:#DCFCE7; color:#16A34A; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600;">Booked</span>`;
+                    timeDisplay = `<span style="color:#2563EB; font-weight:600;"><i class="far fa-clock"></i> ${d.scheduledTime || 'Time TBA'}</span>`;
+                } else if (d.status === 'declined') {
+                    statusBadge = `<span style="background:#FEE2E2; color:#DC2626; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600;">Declined</span>`;
+                    timeDisplay = `<span style="color:#DC2626; font-size:0.85rem;">Please book again</span>`;
+                }
+
+                l.innerHTML += `
+                    <div class="list-item" style="display:block;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <strong>Dr. ${d.doctorName}</strong>
+                            ${statusBadge}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            ${timeDisplay}
+                            <small style="color:gray;">${new Date(d.requestDate).toLocaleDateString()}</small>
+                        </div>
+                    </div>`;
             });
         });
-    }
+}
 
     // --- MY REPORTS ---
     function openMyReports() {
@@ -757,9 +795,7 @@ function openReportInNewWindow(base64Data) {
 }
 
 
-    function updateApt(id, st) {
-        db.collection('appointments').doc(id).update({status:st}).then(() => { showToast("Updated"); closeModal(); });
-    }
+
 
     // --- PATIENT SEARCH ---
     function openPatientSearch() {
@@ -785,8 +821,12 @@ function openReportInNewWindow(base64Data) {
         if(!snap.exists) db.collection('users').doc(currentUserData.uid).set({name:currentUserData.name, role:currentUserData.role}, {merge:true});
     }
     function logout() {
-        auth.signOut().then(() => { localStorage.setItem('isLoggedIn','false'); window.location.href = 'index.html'; });
-    }
+    auth.signOut().then(() => {
+        // CRITICAL FIX: Clear all data so IDs don't get mixed up
+        localStorage.clear(); 
+        window.location.href = 'index.html';
+    });
+}
     function loadNotifications() {
         document.getElementById('notificationList').innerHTML = '<p style="color:gray">No new notifications.</p>';
     }
