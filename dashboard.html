@@ -597,17 +597,73 @@ function updateFileDisplay(input) {
 
     // --- FIND DOCTOR ---
     function openFindDoctorModal() {
-        modalContent.innerHTML = `<h2>Doctors</h2><div id="docList">Loading...</div>`;
+        modalContent.innerHTML = `<h2>Doctors</h2><div id="docList" style="margin-top:15px">Loading list...</div>`;
         modal.classList.add('active');
-        db.collection('users').where('role', '==', 'doctor').get().then(snap => {
-            const list = document.getElementById('docList'); list.innerHTML = '';
-            if(snap.empty) list.innerHTML = '<p>No doctors found.</p>';
-            snap.forEach(doc => {
-                const d = doc.data();
-                list.innerHTML += `<div class="list-item"><span>${d.name}</span><button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button></div>`;
+
+        // We need to fetch two things:
+        // 1. The list of all doctors
+        // 2. The list of appointments I ALREADY made (to check status)
+        Promise.all([
+            db.collection('users').where('role', '==', 'doctor').get(),
+            db.collection('appointments').where('patientId', '==', currentUserData.uid).get()
+        ]).then(([doctorsSnap, myApptSnap]) => {
+            const list = document.getElementById('docList'); 
+            list.innerHTML = '';
+
+            // 1. Create a map of my existing appointments
+            // format: { 'doctorID': 'pending', 'doctorID2': 'accepted' }
+            let myStatusMap = {};
+            myApptSnap.forEach(doc => {
+                const data = doc.data();
+                myStatusMap[data.doctorId] = data.status;
             });
+
+            // 2. Filter Duplicates & Render
+            let uniqueNames = new Set(); // To track names we've already shown
+            let count = 0;
+
+            doctorsSnap.forEach(doc => {
+                const d = doc.data();
+                
+                // SKIP if no name OR if we already showed this name
+                if (!d.name || d.name === 'undefined' || uniqueNames.has(d.name)) {
+                    return;
+                }
+                
+                // Add to set so we don't show it again
+                uniqueNames.add(d.name);
+                count++;
+
+                // Determine button state based on myStatusMap
+                let buttonHtml = '';
+                const status = myStatusMap[doc.id]; // check if we booked this specific doctor ID
+
+                if (status === 'pending') {
+                    buttonHtml = `<button class="list-btn" style="background:#F59E0B; color:white; cursor:default; opacity:0.8;" disabled>Requested</button>`;
+                } else if (status === 'accepted') {
+                    buttonHtml = `<button class="list-btn" style="background:#10B981; color:white; cursor:default; opacity:0.8;" disabled>Approved</button>`;
+                } else {
+                    // No appointment, or it was declined (so we can book again)
+                    buttonHtml = `<button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button>`;
+                }
+
+                list.innerHTML += `
+                    <div class="list-item">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:40px; height:40px; background:#F3F4F6; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-user-md" style="color:#6B7280; font-size:1.2rem;"></i>
+                            </div>
+                            <span style="font-weight:500">${d.name}</span>
+                        </div>
+                        ${buttonHtml}
+                    </div>`;
+            });
+
+            if(count === 0) list.innerHTML = '<p style="text-align:center; color:gray">No doctors found.</p>';
         });
     }
+
+    
     function bookApt(docId, docName) {
         if(!confirm("Book appointment?")) return;
         db.collection('appointments').add({
