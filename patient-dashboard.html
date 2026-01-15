@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard | MEDeLIFE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #EF4444; --secondary: #22C55E; --dark: #111827; --gray: #6B7280; --light: #F3F4F6; --white: #ffffff; --sidebar-width: 260px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: #F9FAFB; color: var(--dark); display: flex; }
+        .sidebar { width: var(--sidebar-width); height: 100vh; background: var(--white); position: fixed; top: 0; left: 0; border-right: 1px solid #E5E7EB; display: flex; flex-direction: column; padding: 2rem 1.5rem; transition: all 0.3s ease; z-index: 100; }
+        .brand { font-size: 24px; font-weight: 700; margin-bottom: 3rem; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .nav-items { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { padding: 12px 15px; border-radius: 12px; color: var(--gray); font-weight: 500; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover, .nav-item.active { background: #FEF2F2; color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .user-mini-profile { border-top: 1px solid #E5E7EB; padding-top: 1.5rem; display: flex; align-items: center; gap: 12px; }
+        .mini-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--secondary); }
+        .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); padding: 2rem 3rem; min-height: 100vh; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+        .welcome-text h1 { font-size: 1.8rem; margin-bottom: 5px; animation: slideDown 0.5s ease-out; }
+        .welcome-text p { color: var(--gray); animation: slideDown 0.7s ease-out; }
+        .btn-logout { padding: 10px 20px; border: 2px solid #FEE2E2; color: var(--primary); background: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-logout:hover { background: #FEE2E2; }
+        .action-section { margin-bottom: 2rem; animation: slideUp 1s ease-out backwards; }
+        .section-title { font-size: 1.2rem; margin-bottom: 1rem; font-weight: 600; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .action-card { background: white; padding: 2rem; border-radius: 16px; text-align: center; cursor: pointer; border: 2px dashed #E5E7EB; transition: all 0.3s; }
+        .action-card:hover { border-color: var(--primary); background: #FEF2F2; }
+        .action-card i { font-size: 2rem; color: var(--primary); margin-bottom: 1rem; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+        .dashboard-modal { background: white; width: 90%; max-width: 600px; border-radius: 16px; padding: 2rem; position: relative; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--gray); z-index: 10; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #E5E7EB; border-radius: 10px; margin-bottom: 10px; transition: 0.2s; }
+        .list-item:hover { border-color: var(--primary); background: #FEF2F2; }
+        .list-btn { padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+        .btn-book { background: var(--primary); color: white; }
+        .btn-view { background: #4F46E5; color: white; }
+        .create-post-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #E5E7EB; margin-bottom: 2rem; animation: slideUp 0.5s ease-out; }
+        .cp-input-area textarea { width: 100%; border: none; resize: none; outline: none; font-size: 1rem; padding: 10px 0; min-height: 80px; font-family: 'Poppins', sans-serif; }
+        .post-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 1.5rem; border: 1px solid #E5E7EB; animation: slideUp 0.5s ease-out; }
+        .post-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+        .interaction-bar { display: flex; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+        .action-btn { background: none; border: none; color: var(--gray); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        .action-btn.liked { color: var(--primary); }
+        .comments-section { margin-top: 1rem; background: #F9FAFB; padding: 1rem; border-radius: 12px; display: none; }
+        .comments-section.open { display: block; }
+        .comment-input-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .comment-input-box input { flex: 1; padding: 8px 12px; border: 1px solid #E5E7EB; border-radius: 20px; outline: none; }
+        .role-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+        .role-patient { background: #E0F2FE; color: #0284C7; }
+        .role-doctor { background: #DCFCE7; color: #16A34A; }
+        .dashboard-tabs { display: flex; gap: 15px; margin-bottom: 2.5rem; border-bottom: 2px solid #E5E7EB; padding-bottom: 0; }
+        .tab-item { padding: 12px 24px; border-radius: 12px 12px 0 0; cursor: pointer; font-weight: 600; color: var(--gray); transition: all 0.3s; display: flex; align-items: center; gap: 10px; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .tab-item:hover, .tab-item.active { color: var(--primary); background: #FEF2F2; }
+        .tab-item.active { border-bottom: 3px solid var(--primary); }
+        #toast-box { position: fixed; bottom: 30px; right: 30px; background: var(--dark); color: white; padding: 15px 25px; border-radius: 12px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; pointer-events: none; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 10px; }
+        #toast-box.show { opacity: 1; transform: translateY(0); }
+        .modern-upload-box { border: 2px dashed #E5E7EB; border-radius: 16px; padding: 40px 20px; text-align: center; background: #F9FAFB; cursor: pointer; transition: all 0.3s ease; position: relative; margin-bottom: 20px; }
+        .modern-upload-box:hover { border-color: var(--primary); background: #FEF2F2; }
+        .modern-upload-box i { font-size: 3rem; color: #9CA3AF; margin-bottom: 15px; transition: 0.3s; }
+        .modern-upload-box:hover i { color: var(--primary); transform: scale(1.1); }
+        .modern-upload-box p { font-weight: 500; color: #4B5563; }
+        .file-input-hidden { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .file-name-display { display: inline-block; margin-top: 10px; padding: 5px 12px; background: white; border-radius: 20px; font-size: 0.85rem; color: var(--primary); border: 1px solid #FEE2E2; font-weight: 600; }
+        .modal-form select, .modal-form input, .modal-form textarea { width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 12px; margin-bottom: 15px; outline: none; font-family: 'Poppins', sans-serif; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); position: fixed; } .sidebar.active { transform: translateX(0); } .main-content { margin-left: 0; width: 100%; padding: 1.5rem; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="brand" onclick="window.location.href='index.html'">
+            <svg width="30" height="30" viewBox="0 0 100 100" style="margin-right: 10px;">
+                <rect x="35" y="10" width="30" height="80" rx="5" fill="#EF4444" />
+                <rect x="10" y="35" width="80" height="30" rx="5" fill="#EF4444" />
+            </svg>
+            <span>MED<span style="color:var(--secondary)">e</span>LIFE</span>
+        </div>
+
+        <div class="nav-items">
+            <div class="nav-item active" onclick="switchMainTab(this, 'home')"><i class="fas fa-home"></i> Home</div>
+            <div class="nav-item" onclick="switchMainTab(this, 'community')"><i class="fas fa-users"></i> Community</div>
+        </div>
+
+        <div class="user-mini-profile">
+            <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
+            <div>
+                <h4 id="sideName" style="font-size: 0.9rem;">Patient</h4>
+                <p id="sideRole" style="font-size: 0.75rem; color: var(--gray);">Personal Account</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header>
+            <div class="welcome-text">
+                <h1 id="welcomeTitle">Welcome Back!</h1>
+                <p id="currentDate">Loading date...</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-tabs" id="mainTabs">
+            <div class="tab-item active" onclick="switchMainTab(this, 'home')"><i class="fas fa-home"></i> Home</div>
+            <div class="tab-item" onclick="switchMainTab(this, 'community')"><i class="fas fa-users"></i> Community</div>
+        </div>
+
+        <div id="tabContentArea">
+            <div class="action-section">
+                <div class="section-title">Quick Actions</div>
+                <div class="quick-actions" id="actionGrid">
+                    <div class="action-card" onclick="openUploadModal()"><i class="fas fa-file-upload"></i><h4>Upload Report</h4><p>X-Ray, ECG, etc.</p></div>
+                    <div class="action-card" onclick="openFindDoctorModal()"><i class="fas fa-user-md"></i><h4>Find Doctors</h4><p>Book Appointment</p></div>
+                    <div class="action-card" onclick="openPatientSchedule()"><i class="fas fa-calendar-alt"></i><h4>View Schedule</h4><p>Check Appointments</p></div>
+                    <div class="action-card" onclick="openMyReports()"><i class="fas fa-file-medical-alt"></i><h4>My Reports</h4><p>View History</p></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="dashboardModal">
+        <div class="dashboard-modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div id="toast-box"><i class="fas fa-info-circle"></i> <span id="toast-msg">Notification</span></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+
+    <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const modal = document.getElementById('dashboardModal');
+    const modalContent = document.getElementById('modalContent');
+
+    // --- INIT PATIENT DATA ---
+    const role = localStorage.getItem('userRole');
+    if(role !== 'patient') { window.location.href = 'index.html'; } // Security Check
+
+    const name = localStorage.getItem('userName') || 'User';
+    let storedEmail = localStorage.getItem('userEmail');
+    let stableId = storedEmail ? storedEmail.replace(/[.#$[\]]/g, '_') : localStorage.getItem('userUid');
+
+    const currentUserData = { name: name, role: 'patient', uid: stableId, email: storedEmail };
+
+    document.getElementById('sideName').innerText = name;
+    document.getElementById('welcomeTitle').innerText = "Hello, " + name;
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // --- TAB SWITCHING ---
+    function switchMainTab(el, tabName) {
+        document.querySelectorAll('.tab-item, .nav-item').forEach(t => t.classList.remove('active'));
+        if(el) el.classList.add('active');
+        
+        const allNavs = document.querySelectorAll('.nav-item');
+        if(tabName === 'home') allNavs[0].classList.add('active');
+        if(tabName === 'community') allNavs[1].classList.add('active');
+
+        const contentArea = document.getElementById('tabContentArea');
+
+        if (tabName === 'home') {
+            contentArea.innerHTML = `
+            <div class="action-section">
+                <div class="section-title">Quick Actions</div>
+                <div class="quick-actions">
+                    <div class="action-card" onclick="openUploadModal()"><i class="fas fa-file-upload"></i><h4>Upload Report</h4><p>X-Ray, ECG, etc.</p></div>
+                    <div class="action-card" onclick="openFindDoctorModal()"><i class="fas fa-user-md"></i><h4>Find Doctors</h4><p>Book Appointment</p></div>
+                    <div class="action-card" onclick="openPatientSchedule()"><i class="fas fa-calendar-alt"></i><h4>View Schedule</h4><p>Check Appointments</p></div>
+                    <div class="action-card" onclick="openMyReports()"><i class="fas fa-file-medical-alt"></i><h4>My Reports</h4><p>View History</p></div>
+                </div>
+            </div>`;
+        } else if (tabName === 'community') {
+            loadCommunityFeed(contentArea);
+        }
+    }
+
+    // --- PATIENT FUNCTIONS ---
+    function openUploadModal() {
+        modalContent.innerHTML = `
+            <h2 style="margin-bottom:20px;">Upload Document</h2>
+            <div class="modal-form">
+                <label>Type of Document</label>
+                <select id="reportType">
+                    <option value="X-Ray">X-Ray / Scan</option>
+                    <option value="ECG">ECG Report</option>
+                    <option value="Blood Test">Blood / Lab Test</option>
+                </select>
+                <div class="modern-upload-box">
+                    <input type="file" id="reportFile" class="file-input-hidden" accept="image/*,.pdf" onchange="updateFileDisplay(this)">
+                    <div id="uploadContentUi"><i class="fas fa-cloud-upload-alt"></i><p>Click or Drag file here</p></div>
+                </div>
+                <div id="fileSelectedName" style="text-align:center; margin-bottom:15px; display:none;"><span class="file-name-display" id="fNameText"></span></div>
+                <button class="list-btn btn-book" style="width:100%; padding:15px;" onclick="submitReport()"><i class="fas fa-check"></i> Submit Report</button>
+            </div>`;
+        modal.classList.add('active');
+    }
+
+    function updateFileDisplay(input) {
+        if(input.files && input.files[0]) {
+            document.getElementById('fNameText').innerText = input.files[0].name;
+            document.getElementById('fileSelectedName').style.display = 'block';
+            document.querySelector('.modern-upload-box').style.background = '#F0FDF4';
+            document.querySelector('.modern-upload-box i').className = 'fas fa-check-circle';
+        }
+    }
+
+    function submitReport() {
+        const file = document.getElementById('reportFile').files[0];
+        if(!file) { showToast("Select a file first."); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            db.collection('reports').add({
+                patientId: currentUserData.uid, patientName: currentUserData.name,
+                reportType: document.getElementById('reportType').value, fileData: e.target.result,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => { showToast("Uploaded!"); closeModal(); });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function openFindDoctorModal() {
+        modalContent.innerHTML = `<h2>Doctors</h2><div id="docList" style="margin-top:15px">Loading list...</div>`;
+        modal.classList.add('active');
+        Promise.all([
+            db.collection('users').where('role', '==', 'doctor').get(),
+            db.collection('appointments').where('patientId', '==', currentUserData.uid).get()
+        ]).then(([doctorsSnap, myApptSnap]) => {
+            const list = document.getElementById('docList'); list.innerHTML = '';
+            let myStatusMap = {};
+            myApptSnap.forEach(doc => { myStatusMap[doc.data().doctorId] = doc.data().status; });
+            
+            doctorsSnap.forEach(doc => {
+                const d = doc.data();
+                const status = myStatusMap[doc.id];
+                let btn = status === 'pending' ? '<button class="list-btn" disabled style="opacity:0.6; background:#F59E0B; color:white;">Requested</button>' :
+                          status === 'accepted' ? '<button class="list-btn" disabled style="opacity:0.6; background:#10B981; color:white;">Booked</button>' :
+                          `<button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button>`;
+
+                list.innerHTML += `<div class="list-item"><span>Dr. ${d.name}</span> ${btn}</div>`;
+            });
+            if(doctorsSnap.empty) list.innerHTML = '<p>No doctors found.</p>';
+        });
+    }
+
+    function bookApt(docId, docName) {
+        if(!confirm("Book appointment?")) return;
+        db.collection('appointments').add({
+            patientId: currentUserData.uid, patientName: currentUserData.name,
+            doctorId: docId, doctorName: docName, status: 'pending', requestDate: new Date().toISOString()
+        }).then(() => { showToast("Request Sent!"); closeModal(); });
+    }
+
+    function openPatientSchedule() {
+        modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('appointments').where('patientId', '==', currentUserData.uid).get().then(snap => {
+            const l = document.getElementById('schedList'); l.innerHTML = '';
+            if(snap.empty) { l.innerHTML = '<p>No appointments.</p>'; return; }
+            let apps = []; snap.forEach(doc => apps.push(doc.data()));
+            apps.sort((a,b) => new Date(b.requestDate) - new Date(a.requestDate));
+            apps.forEach(d => {
+                let badge = d.status === 'accepted' ? `<span style="color:green">Booked: ${d.scheduledTime||'TBA'}</span>` : 
+                            d.status === 'pending' ? '<span style="color:orange">Pending</span>' : '<span style="color:red">Declined</span>';
+                l.innerHTML += `<div class="list-item" style="display:block"><strong>Dr. ${d.doctorName}</strong><br>${badge}</div>`;
+            });
+        });
+    }
+
+    function openMyReports() {
+        modalContent.innerHTML = `<h2>My Reports</h2><div id="repList">Loading...</div>`;
+        modal.classList.add('active');
+        db.collection('reports').where('patientId', '==', currentUserData.uid).get().then(snap => {
+            const l = document.getElementById('repList'); l.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                l.innerHTML += `<div class="list-item"><span>${d.reportType}</span><button class="list-btn btn-view" onclick="viewFile('${d.fileData}')">View</button></div>`;
+            });
+            if(snap.empty) l.innerHTML = '<p>No reports uploaded.</p>';
+        });
+    }
+
+    // --- SHARED UTILS ---
+    function viewFile(data) { const win = window.open(); win.document.write(`<iframe src="${data}" style="width:100%;height:100%;border:none;"></iframe>`); }
+    function closeModal() { modal.classList.remove('active'); }
+    function showToast(msg) { const b = document.getElementById('toast-box'); document.getElementById('toast-msg').innerText = msg; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+    // --- SHARED COMMUNITY LOGIC ---
+    function loadCommunityFeed(container) {
+        container.innerHTML = `
+            <div class="create-post-card"><h3>Ask the Community</h3><textarea id="postContent" placeholder="Ask a question..."></textarea>
+            <button class="list-btn btn-book" style="margin-top:10px" onclick="submitPost()">Post</button></div>
+            <div id="feedContainer">Loading...</div>`;
+        listenToPosts();
+    }
+    function submitPost() {
+        const c = document.getElementById('postContent').value.trim();
+        if(!c) return;
+        db.collection('posts').add({ authorName: currentUserData.name, authorRole: 'patient', authorId: currentUserData.uid, content: c, timestamp: firebase.firestore.FieldValue.serverTimestamp(), likes: [], comments: [] })
+        .then(()=>{ document.getElementById('postContent').value=''; showToast("Posted!"); });
+    }
+    function listenToPosts() {
+        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+            const f = document.getElementById('feedContainer'); if(!f) return; f.innerHTML = '';
+            snap.forEach(doc => {
+                const p = doc.data();
+                const isLiked = p.likes?.includes(currentUserData.uid);
+                f.innerHTML += `
+                    <div class="post-card">
+                        <small><strong>${p.authorName}</strong> (${p.authorRole})</small><p>${p.content}</p>
+                        <div class="interaction-bar">
+                            <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}',${isLiked})"><i class="fa-heart ${isLiked?'fas':'far'}"></i> ${p.likes?.length||0}</button>
+                            <button class="action-btn" onclick="document.getElementById('c-${doc.id}').style.display='block'"><i class="far fa-comment"></i> Comment</button>
+                        </div>
+                        <div id="c-${doc.id}" class="comments-section">
+                             ${(p.comments||[]).map(c=>`<div><b>${c.author}:</b> ${c.text}</div>`).join('')}
+                             <div class="comment-input-box" style="margin-top:10px"><input id="i-${doc.id}"><button class="list-btn btn-book" onclick="sendComment('${doc.id}')">Send</button></div>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+    function toggleLike(pid, liked) { db.collection('posts').doc(pid).update({ likes: liked ? firebase.firestore.FieldValue.arrayRemove(currentUserData.uid) : firebase.firestore.FieldValue.arrayUnion(currentUserData.uid) }); }
+    function sendComment(pid) {
+        const t = document.getElementById('i-'+pid).value; if(!t) return;
+        db.collection('posts').doc(pid).update({ comments: firebase.firestore.FieldValue.arrayUnion({ text: t, author: currentUserData.name, role: 'patient' }) });
+    }
+    </script>
+</body>
+</html>
