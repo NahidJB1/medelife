@@ -444,30 +444,27 @@
             if (typeof firebase !== 'undefined') {
                 firebase.auth().signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    // --- 1. GET USER ID ---
                     const uid = userCredential.user.uid;
                     const db = firebase.firestore();
 
-                    // --- 2. FETCH ROLE FROM DATABASE ---
+                    // --- FETCH ROLE AND REDIRECT ---
                     db.collection("users").doc(uid).get().then((doc) => {
                         if (doc.exists) {
                             const userData = doc.data();
                             
-                            // --- 3. OVERWRITE STALE DATA ---
-                            // This ensures the dashboard sees the CORRECT role for THIS user
+                            // Save Session Data
                             localStorage.setItem('isLoggedIn', 'true');
                             localStorage.setItem('userName', userData.name);
                             localStorage.setItem('userRole', userData.role); 
+                            localStorage.setItem('userEmail', userData.email || email); // Ensure email is saved
                             
-                            window.location.href = "dashboard.html"; 
+                            // --- NEW: REDIRECT BASED ON ROLE ---
+                            redirectToDashboard(userData.role);
                         } else {
-                            // Fallback: User exists in Auth but not in DB (Old accounts?)
-                            console.log("User data not found, checking local backup...");
                             checkLocalBackupAndRedirect(email);
                         }
                     }).catch((error) => {
                         console.error("Error getting document:", error);
-                        // If DB fails, try to let them in anyway
                         checkLocalBackupAndRedirect(email);
                     });
                 })
@@ -477,30 +474,41 @@
                     alert("Login Failed: " + error.message);
                 });
             } else {
-                // DEMO MODE: Check our fake local DB
+                // DEMO MODE
                 setTimeout(() => { 
                     checkLocalBackupAndRedirect(email);
                 }, 1500);
             }
         }
 
-        // --- HELPER FOR DEMO/FALLBACK LOGIN ---
         function checkLocalBackupAndRedirect(email) {
-            // Check if we have a saved record for this SPECIFIC email
             const savedData = localStorage.getItem('db_user_' + email);
-            
+            let role = 'patient'; // Default
+
             if (savedData) {
                 const data = JSON.parse(savedData);
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('userName', data.name);
-                localStorage.setItem('userRole', data.role); // <--- Sets the correct role!
+                localStorage.setItem('userRole', data.role);
+                role = data.role;
             } else {
-                // If we know nothing about them, we just let them in as patient (default)
                 localStorage.setItem('isLoggedIn', 'true');
-                // Don't overwrite role if it's not there, or default to patient
                 if(!localStorage.getItem('userRole')) localStorage.setItem('userRole', 'patient');
             }
-            window.location.href = "dashboard.html";
+            
+            // --- NEW: REDIRECT BASED ON ROLE ---
+            redirectToDashboard(role);
+        }
+
+        // --- NEW HELPER FUNCTION ---
+        function redirectToDashboard(role) {
+            if (role === 'doctor') {
+                window.location.href = "doctor-dashboard.html";
+            } else if (role === 'pharmacy') {
+                window.location.href = "pharmacy-dashboard.html";
+            } else {
+                window.location.href = "patient-dashboard.html";
+            }
         }
     </script>
 </body>
