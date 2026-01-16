@@ -211,26 +211,8 @@
     function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 
     // --- SHARED COMMUNITY LOGIC ---
-    function loadCommunityFeed(container) {
-        container.innerHTML = `
-            <div class="create-post-card"><h3>Community Updates</h3><p style="color:gray">Pharmacy staff can view community discussions.</p></div>
-            <div id="feedContainer">Loading...</div>`;
-        listenToPosts();
-    }
     
-    function listenToPosts() {
-        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-            const f = document.getElementById('feedContainer'); if(!f) return; f.innerHTML = '';
-            snap.forEach(doc => {
-                const p = doc.data();
-                f.innerHTML += `
-                    <div class="post-card">
-                        <small><strong>${p.authorName}</strong> (${p.authorRole})</small><p>${p.content}</p>
-                        <div class="interaction-bar"><span style="color:gray"><i class="fa-heart far"></i> ${p.likes?.length||0} Likes</span></div>
-                    </div>`;
-            });
-        });
-    }
+  
     </script>
 </body>
 </html>
