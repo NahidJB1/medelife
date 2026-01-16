@@ -148,15 +148,16 @@
     const modalContent = document.getElementById('modalContent');
 
     // --- INIT DOCTOR DATA ---
+// --- INIT DOCTOR DATA ---
     const role = localStorage.getItem('userRole');
-    if(role !== 'doctor') { window.location.href = 'index.html'; } // Security Check
+    if(role !== 'doctor') { window.location.href = 'index.html'; }
 
     const name = localStorage.getItem('userName') || 'Dr. User';
-    let storedEmail = localStorage.getItem('userEmail');
-    let stableId = storedEmail ? storedEmail.replace(/[.#$[\]]/g, '_') : localStorage.getItem('userUid');
+    const storedEmail = localStorage.getItem('userEmail');
+    // FIX: Use the actual Auth UID to match what patients see
+    const stableId = localStorage.getItem('userUid'); 
 
     const currentUserData = { name: name, role: 'doctor', uid: stableId, email: storedEmail };
-
     document.getElementById('sideName').innerText = name;
     document.getElementById('welcomeTitle').innerText = "Hello, " + name;
     document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
