@@ -286,41 +286,8 @@
     function showToast(msg) { const b = document.getElementById('toast-box'); document.getElementById('toast-msg').innerText = msg; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
     function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 
-    // --- SHARED COMMUNITY LOGIC ---
-    function loadCommunityFeed(container) {
-        container.innerHTML = `
-            <div class="create-post-card"><h3>Share Medical Insight</h3><textarea id="postContent" placeholder="Share advice..."></textarea>
-            <button class="list-btn btn-book" style="margin-top:10px" onclick="submitPost()">Post</button></div>
-            <div id="feedContainer">Loading...</div>`;
-        listenToPosts();
-    }
-    function submitPost() {
-        const c = document.getElementById('postContent').value.trim();
-        if(!c) return;
-        db.collection('posts').add({ authorName: currentUserData.name, authorRole: 'doctor', authorId: currentUserData.uid, content: c, timestamp: firebase.firestore.FieldValue.serverTimestamp(), likes: [], comments: [] })
-        .then(()=>{ document.getElementById('postContent').value=''; showToast("Posted!"); });
-    }
-    function listenToPosts() {
-        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-            const f = document.getElementById('feedContainer'); if(!f) return; f.innerHTML = '';
-            snap.forEach(doc => {
-                const p = doc.data();
-                const isLiked = p.likes?.includes(currentUserData.uid);
-                f.innerHTML += `
-                    <div class="post-card">
-                        <small><strong>${p.authorName}</strong> (${p.authorRole})</small><p>${p.content}</p>
-                        <div class="interaction-bar">
-                            <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}',${isLiked})"><i class="fa-heart ${isLiked?'fas':'far'}"></i> ${p.likes?.length||0}</button>
-                            <button class="action-btn" onclick="document.getElementById('c-${doc.id}').style.display='block'"><i class="far fa-comment"></i> Comment</button>
-                        </div>
-                        <div id="c-${doc.id}" class="comments-section">
-                             ${(p.comments||[]).map(c=>`<div><b>${c.author}:</b> ${c.text}</div>`).join('')}
-                             <div class="comment-input-box" style="margin-top:10px"><input id="i-${doc.id}"><button class="list-btn btn-book" onclick="sendComment('${doc.id}')">Send</button></div>
-                        </div>
-                    </div>`;
-            });
-        });
-    }
+
+    
     function toggleLike(pid, liked) { db.collection('posts').doc(pid).update({ likes: liked ? firebase.firestore.FieldValue.arrayRemove(currentUserData.uid) : firebase.firestore.FieldValue.arrayUnion(currentUserData.uid) }); }
     function sendComment(pid) {
         const t = document.getElementById('i-'+pid).value; if(!t) return;
