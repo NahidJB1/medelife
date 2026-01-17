@@ -243,21 +243,20 @@
             const list = document.getElementById('docList'); 
             list.innerHTML = '';
             
-            // Map Doctor ID to Appointment Data (Status + Appointment ID)
+            // Map Doctor ID to Appointment Data
             let myApptMap = {};
             myApptSnap.forEach(doc => { 
-                myApptMap[doc.data().doctorId] = { 
-                    status: doc.data().status, 
-                    id: doc.id 
-                }; 
+                myApptMap[doc.data().doctorId] = { status: doc.data().status, id: doc.id }; 
             });
             
-            const processedIds = new Set();
+            // FIX: Filter by NAME to strictly prevent duplicates
+            const processedNames = new Set();
             
             doctorsSnap.forEach(doc => {
                 const d = doc.data();
-                if (processedIds.has(doc.id)) return;
-                processedIds.add(doc.id);
+                // If we have already shown a doctor with this NAME, skip this one
+                if (processedNames.has(d.name)) return;
+                processedNames.add(d.name);
 
                 const aptData = myApptMap[doc.id];
                 const status = aptData ? aptData.status : null;
@@ -266,7 +265,6 @@
                 let actionArea = '';
 
                 if (status === 'pending') {
-                    // SHOW: "Requested" text AND "Cancel" button
                     actionArea = `
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                             <span style="font-size:0.8rem; color:#F59E0B; font-weight:600;">Requested</span>
