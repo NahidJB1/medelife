@@ -149,20 +149,35 @@
 
     // --- INIT DOCTOR DATA ---
 // --- INIT DOCTOR DATA ---
+    // --- INIT DOCTOR DATA ---
     const role = localStorage.getItem('userRole');
     if(role !== 'doctor') { window.location.href = 'index.html'; }
 
     const name = localStorage.getItem('userName') || 'Dr. User';
     const storedEmail = localStorage.getItem('userEmail');
-    // FIX: Use the actual Auth UID to match what patients see
-    const stableId = localStorage.getItem('userUid'); 
+    
+    // FIX: Try to get the Auth ID, but fall back to Email ID if missing
+    let stableId = localStorage.getItem('userUid');
+    
+    if (!stableId && storedEmail) {
+        // Fallback for older accounts or if userUid wasn't saved during login
+        stableId = storedEmail.replace(/[.#$[\]]/g, '_');
+    }
+
+    // SAFETY CHECK: If we still don't have an ID, force a re-login
+    if (!stableId) {
+        alert("System Update: Please logout and login again to refresh your session.");
+        window.location.href = 'index.html';
+        throw new Error("Critical: Missing User ID"); // Stops the crash from continuing
+    }
 
     const currentUserData = { name: name, role: 'doctor', uid: stableId, email: storedEmail };
+    
     document.getElementById('sideName').innerText = name;
     document.getElementById('welcomeTitle').innerText = "Hello, " + name;
     document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
-    // Sync Email so Patients can find this doctor
+    // Sync User Data (Now safe from crashing)
     db.collection('users').doc(currentUserData.uid).set({
         name: currentUserData.name, role: 'doctor', email: currentUserData.email
     }, { merge: true });
