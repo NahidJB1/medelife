@@ -294,6 +294,42 @@
         const t = document.getElementById('i-'+pid).value; if(!t) return;
         db.collection('posts').doc(pid).update({ comments: firebase.firestore.FieldValue.arrayUnion({ text: t, author: currentUserData.name, role: 'doctor' }) });
     }
+
+    // --- FIX: MISSING COMMUNITY FUNCTION ---
+    function loadCommunityFeed(container) {
+        container.innerHTML = `
+            <div class="create-post-card">
+                <textarea id="newPostText" class="cp-input-area" style="width:100%; border:none; outline:none;" placeholder="Share a health tip..."></textarea>
+                <div style="text-align:right; margin-top:10px;">
+                    <button class="list-btn btn-book" onclick="publishPost()">Post</button>
+                </div>
+            </div>
+            <div id="feedStream">Loading...</div>
+        `;
+
+        db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snap => {
+            const feed = document.getElementById('feedStream');
+            if(!feed) return;
+            feed.innerHTML = '';
+            snap.forEach(doc => {
+                const p = doc.data();
+                feed.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-header"><strong>${p.authorName}</strong> <span class="role-badge role-${p.authorRole}">${p.authorRole}</span></div>
+                        <p>${p.content}</p>
+                        <div class="interaction-bar"><small>${p.likes ? p.likes.length : 0} Likes</small></div>
+                    </div>`;
+            });
+        });
+    }
+
+    function publishPost() {
+        const txt = document.getElementById('newPostText').value;
+        if(txt) db.collection('posts').add({
+            authorName: currentUserData.name, authorRole: 'doctor', authorId: currentUserData.uid,
+            content: txt, likes: [], comments: [], timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
     </script>
 </body>
 </html>
