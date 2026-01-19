@@ -66,6 +66,22 @@
 .day-circle:hover { background: #F9FAFB; }
 /* Mobile tweak for small screens */
 @media (max-width: 400px) { .day-circle { width: 35px; height: 35px; font-size: 0.8rem; } }
+
+/* New Time Builder Styles */
+        .time-builder-area { background: #F9FAFB; padding: 15px; border-radius: 12px; border: 1px solid #E5E7EB; }
+        .time-select-group { display: flex; gap: 5px; align-items: center; }
+        .time-select { padding: 8px 2px; border: 1px solid #E5E7EB; border-radius: 6px; background: white; outline: none; text-align: center; cursor: pointer; font-family: 'Poppins', sans-serif;}
+        .schedule-tag { background: white; padding: 10px 15px; border-radius: 8px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .btn-add-time { background: var(--dark); color: white; border: none; padding: 0 20px; height: 38px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .btn-add-time:hover { background: var(--primary); }
+        .day-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-weight: 500; color: var(--gray); background: white; user-select: none; font-size: 0.8rem; }
+        .day-circle.selected { background: #EFF6FF; color: #2563EB; border-color: #2563EB; font-weight: 700; }
+        
+        /* Mobile adjustment for time inputs */
+        @media (max-width: 500px) {
+            .time-controls-row { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .btn-add-time { width: 100%; margin-top: 5px; }
+        }
     </style>
 </head>
 <body>
@@ -179,18 +195,49 @@
             container.innerHTML = `
                 <div class="form-group"><label>Full Name</label><input type="text" class="form-input" id="inp_name" value="${name}"></div>
                 <div class="form-group"><label>Specialist In</label><input type="text" class="form-input" id="inp_specialist" placeholder="e.g. Cardiology"></div>
-                <div class="form-group"><label>Degrees (Separate by comma)</label><input type="text" class="form-input" id="inp_degrees" placeholder="e.g. MBBS, MD (Harvard)"></div>
+                <div class="form-group"><label>Degrees</label><input type="text" class="form-input" id="inp_degrees" placeholder="e.g. MBBS, MD"></div>
                 <div class="form-group"><label>Contact Number</label><input type="tel" class="form-input" id="inp_phone"></div>
                 <div class="form-group" style="grid-column:1/-1"><label>Chamber Address</label><input type="text" class="form-input" id="inp_address"></div>
                 
                 <div class="form-group" style="grid-column:1/-1">
-                    <label>Usual Checking Time</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="text" class="form-input" id="inp_time" placeholder="No schedule set" readonly style="background:#F9FAFB; cursor:default; color:#374151;">
-                        <button class="list-btn btn-view" style="padding:12px 20px; background:var(--dark);" type="button" onclick="openTimeScheduler()">
-                            <i class="far fa-clock"></i> Edit Hours
-                        </button>
+                    <label>Manage Schedule</label>
+                    <div class="time-builder-area">
+                        <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Mon">M</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Tue">T</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Wed">W</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Thu">T</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Fri">F</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Sat">S</div>
+                            <div class="day-circle" onclick="toggleDay(this)" data-d="Sun">S</div>
+                        </div>
+
+                        <div class="time-controls-row" style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end; margin-bottom:15px;">
+                            <div>
+                                <span style="font-size:0.75rem; color:var(--gray); display:block; margin-bottom:4px;">Open Time</span>
+                                <div class="time-select-group">
+                                    <select id="openH" class="time-select">${generateOptions(1,12)}</select> :
+                                    <select id="openM" class="time-select">${generateOptions(0,50,10)}</select>
+                                    <select id="openAmPm" class="time-select"><option>AM</option><option>PM</option></select>
+                                </div>
+                            </div>
+                            <span style="color:var(--gray); padding-bottom:10px;">-</span>
+                            <div>
+                                <span style="font-size:0.75rem; color:var(--gray); display:block; margin-bottom:4px;">Close Time</span>
+                                <div class="time-select-group">
+                                    <select id="closeH" class="time-select">${generateOptions(1,12)}</select> :
+                                    <select id="closeM" class="time-select">${generateOptions(0,50,10)}</select>
+                                    <select id="closeAmPm" class="time-select"><option>PM</option><option>AM</option></select>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-add-time" onclick="addScheduleRow()"><i class="fas fa-plus"></i> Add Hours</button>
+                        </div>
+
+                        <div id="scheduleContainer" style="border-top:1px solid #E5E7EB; padding-top:10px;">
+                            <p id="emptySchedMsg" style="font-size:0.85rem; color:var(--gray); font-style:italic;">No hours added yet.</p>
+                        </div>
                     </div>
+                    <input type="hidden" id="inp_time">
                 </div>
             `;
         } else if (role === 'pharmacy') {
@@ -373,6 +420,113 @@
             h = h ? h : 12; // 0 becomes 12
             return `${h}:${m} ${ampm}`;
         }
+    </script>
+
+    <script>
+        // 1. Generate Dropdown Options (Helper)
+        function generateOptions(start, end, step = 1) {
+            let ops = '';
+            for(let i=start; i<=end; i+=step) {
+                let val = i < 10 ? '0'+i : i;
+                ops += `<option value="${val}">${val}</option>`;
+            }
+            return ops;
+        }
+
+        // 2. Toggle Day Selection
+        function toggleDay(el) { el.classList.toggle('selected'); }
+
+        // 3. Add Schedule Row
+        function addScheduleRow() {
+            // Get Days
+            const daysMap = { 'Mon':1, 'Tue':2, 'Wed':3, 'Thu':4, 'Fri':5, 'Sat':6, 'Sun':7 };
+            const selectedEls = Array.from(document.querySelectorAll('.day-circle.selected'));
+            
+            if(selectedEls.length === 0) { alert("Select at least one day"); return; }
+            
+            selectedEls.sort((a,b) => daysMap[a.getAttribute('data-d')] - daysMap[b.getAttribute('data-d')]);
+            const dayNames = selectedEls.map(el => el.getAttribute('data-d'));
+
+            // Format Day String
+            let dayString = dayNames.join(', ');
+            if (dayNames.length > 2 && isConsecutive(selectedEls, daysMap)) {
+                dayString = `${dayNames[0]} - ${dayNames[dayNames.length-1]}`;
+            } else if(dayNames.length === 7) dayString = "Everyday";
+
+            // Get Time
+            const t = {
+                oh: document.getElementById('openH').value,
+                om: document.getElementById('openM').value,
+                oa: document.getElementById('openAmPm').value,
+                ch: document.getElementById('closeH').value,
+                cm: document.getElementById('closeM').value,
+                ca: document.getElementById('closeAmPm').value
+            };
+
+            const timeString = `${t.oh}:${t.om} ${t.oa} - ${t.ch}:${t.cm} ${t.ca}`;
+            const fullString = `${dayString}: ${timeString}`;
+
+            // Create Visual Tag
+            const container = document.getElementById('scheduleContainer');
+            document.getElementById('emptySchedMsg').style.display = 'none';
+
+            const div = document.createElement('div');
+            div.className = 'schedule-tag';
+            div.innerHTML = `<span><i class="far fa-clock" style="color:var(--primary); margin-right:8px;"></i>${fullString}</span> <i class="fas fa-times" style="color:#EF4444; cursor:pointer;" onclick="removeSchedule(this)"></i>`;
+            container.appendChild(div);
+
+            // Reset UI
+            selectedEls.forEach(el => el.classList.remove('selected'));
+            updateHiddenInput();
+        }
+
+        // 4. Remove Schedule
+        function removeSchedule(icon) {
+            icon.closest('.schedule-tag').remove();
+            const container = document.getElementById('scheduleContainer');
+            if(container.children.length <= 1) { // 1 because emptySchedMsg is hidden but present
+                document.getElementById('emptySchedMsg').style.display = 'block';
+            }
+            updateHiddenInput();
+        }
+
+        // 5. Update Hidden Input (For DB Saving)
+        function updateHiddenInput() {
+            const tags = document.querySelectorAll('.schedule-tag span');
+            let finalVal = [];
+            tags.forEach(t => finalVal.push(t.innerText));
+            // Join with a separator that looks good in patient view
+            document.getElementById('inp_time').value = finalVal.join(' | ');
+        }
+
+        // 6. Check Consecutive Days Helper
+        function isConsecutive(els, map) {
+            for(let i=0; i < els.length-1; i++) {
+                if(map[els[i+1].getAttribute('data-d')] - map[els[i].getAttribute('data-d')] !== 1) return false;
+            }
+            return true;
+        }
+
+        // 7. Auto-Load Existing Data (Safe Handling)
+        // We modify the existing load loop to handle this specific field
+        const originalDbLoad = db.collection('users').doc(uid).get();
+        originalDbLoad.then(doc => {
+            if(doc.exists && doc.data().time) {
+                // If data exists, just populate the hidden field and show a "Saved" tag
+                // Note: Parsing complex strings back to UI is risky, so we show it as a tag they can delete.
+                setTimeout(() => {
+                    const savedTime = doc.data().time;
+                    if(savedTime && document.getElementById('scheduleContainer')) {
+                        document.getElementById('emptySchedMsg').style.display = 'none';
+                        const div = document.createElement('div');
+                        div.className = 'schedule-tag';
+                        div.innerHTML = `<span>${savedTime}</span> <i class="fas fa-times" style="color:#EF4444; cursor:pointer;" onclick="removeSchedule(this)"></i>`;
+                        document.getElementById('scheduleContainer').appendChild(div);
+                        document.getElementById('inp_time').value = savedTime;
+                    }
+                }, 1000); // Small delay to ensure HTML is injected
+            }
+        });
     </script>
 </body>
 </html>
