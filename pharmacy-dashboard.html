@@ -209,8 +209,17 @@
                 const userData = userDoc.data();
                 const patientId = userDoc.id;
 
-                div.innerHTML += `<div style="background:#F3F4F6; padding:10px; border-radius:8px; margin-bottom:10px;">
-                    <strong>Patient: ${userData.name}</strong>
+                const pImg = userData.profilePic || 'https://via.placeholder.com/40';
+div.innerHTML += `
+    <div style="background:#F3F4F6; padding:15px; border-radius:8px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <img src="${pImg}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+            <strong>Patient: ${userData.name}</strong>
+        </div>
+        <div id="records-${patientId}" style="border-top:1px solid #E5E7EB; padding-top:10px;">
+            Loading records...
+        </div>
+    </div>`;
                     <div id="records-${patientId}" style="margin-top:10px; border-top:1px solid #E5E7EB; padding-top:10px;">
                         Loading records...
                     </div>
