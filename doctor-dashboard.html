@@ -87,75 +87,83 @@
 .dual-btn-row button { flex: 1; padding: 12px; border: 1px solid #E5E7EB; background: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
 .dual-btn-row button:hover { background: #F9FAFB; border-color: var(--primary); color: var(--primary); }
 
-/* --- PRINT / SAVE AS PDF STYLES --- */
+/* --- PRINT / SAVE AS PDF STYLES (UPDATED) --- */
 @media print {
+    /* 1. Reset the page completely */
     @page {
         size: A4;
-        margin: 0.5cm; /* Small margin to maximize space */
+        margin: 0; /* Remove default browser margins */
     }
 
-    body {
-        background: white;
-        -webkit-print-color-adjust: exact !important; /* Forces background colors to print */
-        print-color-adjust: exact !important;
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        overflow: visible !important;
     }
 
-    /* Hide UI Elements */
-    .sidebar, .main-content, .close-modal, .header-actions, .dashboard-tabs, #toast-box, .no-print {
+    /* 2. NUCLEAR OPTION: Hide ALL direct children of the body */
+    body > * {
         display: none !important;
     }
 
-    /* Force Modal to be the only thing visible and reset its positioning */
+    /* 3. Bring back ONLY the Document Viewer Modal */
     #documentViewerModal {
-        position: relative !important;
-        display: block !important;
+        display: block !important; /* Force it to show */
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 100% !important;
         height: auto !important;
         background: white !important;
-        padding: 0 !important;
+        z-index: 9999 !important;
         margin: 0 !important;
-        top: 0 !important;
-        left: 0 !important;
-        overflow: visible !important;
-        z-index: 99999;
+        padding: 0 !important;
     }
 
-    .dashboard-modal {
+    /* 4. Reset the internal modal structure to look like a plain paper */
+    #documentViewerModal .dashboard-modal {
         box-shadow: none !important;
         border: none !important;
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
-        height: auto !important;
-        overflow: visible !important;
+        position: static !important;
+        background: transparent !important;
     }
 
+    /* 5. Ensure the content inside is visible and flows naturally */
     #docViewerContent {
-        overflow: visible !important;
         display: block !important;
+        overflow: visible !important; /* Print full height, don't scroll */
         height: auto !important;
+        padding: 20px !important; /* Add padding for the paper edge */
     }
 
-    /* The Prescription Paper Itself */
+    /* 6. Style the actual prescription box for print */
     .rx-paper {
-        border: 2px solid #000 !important; /* Add a border for the printed paper look */
+        border: 2px solid #000 !important; /* Clean border */
         box-shadow: none !important;
         margin: 0 auto !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 20px !important;
+        width: 90% !important; /* Keep some breathing room */
+        max-width: 800px !important;
     }
 
+    /* 7. Ensure Background Colors Print (e.g., the Gray box) */
     .rx-body-bg {
-        border: 1px solid #333 !important;
-        background-color: #FAFAFA !important; /* Ensure gray bg prints */
-        min-height: 500px !important; /* Expand to fill page */
+        background-color: #FAFAFA !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border: 1px solid #ccc !important;
     }
 
-    /* Prevent weird page breaks */
-    .rx-header, .rx-meta, .rx-footer {
-        page-break-inside: avoid;
+    /* 8. Hide the Close Button and Print Button */
+    .close-modal, 
+    .no-print {
+        display: none !important;
     }
 }
     </style>
