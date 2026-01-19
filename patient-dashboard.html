@@ -263,13 +263,11 @@
             const list = document.getElementById('docList'); 
             list.innerHTML = '';
             
-            // Map Doctor ID to Appointment Data
             let myApptMap = {};
             myApptSnap.forEach(doc => { 
                 myApptMap[doc.data().doctorId] = { status: doc.data().status, id: doc.id }; 
             });
             
-            // Filter by NAME to prevent duplicates
             const processedNames = new Set();
             
             doctorsSnap.forEach(doc => {
@@ -292,25 +290,130 @@
                 } else if (status === 'accepted') {
                     actionArea = `<button class="list-btn" disabled style="opacity:0.6; background:#10B981; color:white;">Booked</button>`;
                 } else {
-                    actionArea = `<button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button>`;
+                    // CHANGED: Calls openDoctorBooking instead of bookApt
+                    actionArea = `<button class="list-btn btn-book" onclick="openDoctorBooking('${doc.id}')">Book</button>`;
                 }
 
-                // --- FIX: Define avatarImg logic OUTSIDE the template string ---
                 const avatarImg = d.profilePic 
-                    ? `<img src="${d.profilePic}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">` 
-                    : `<div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280;"><i class="fas fa-user-md"></i></div>`;
+                    ? `<img src="${d.profilePic}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid var(--secondary);">` 
+                    : `<div style="width:40px; height:40px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280; border:2px solid #E5E7EB;"><i class="fas fa-user-md"></i></div>`;
 
-                // --- FIX: Use ${avatarImg} inside the string ---
-                list.innerHTML += `<div class="list-item">
-                    <div style="display:flex; align-items:center; gap:10px;">
+                list.innerHTML += `
+                <div class="list-item" style="transition:0.3s;">
+                    <div style="display:flex; align-items:center; gap:15px;">
                         ${avatarImg}
-                        <span style="font-weight:600;">Dr. ${d.name}</span>
+                        <div>
+                            <span style="font-weight:600; font-size:1rem;">Dr. ${d.name}</span>
+                            <div style="font-size:0.8rem; color:var(--gray);">${d.specialist || 'General'}</div>
+                        </div>
                     </div> 
                     ${actionArea}
                 </div>`;
             });
             
             if(list.innerHTML === '') list.innerHTML = '<p>No doctors found.</p>';
+        });
+    }
+
+    function openDoctorBooking(docId) {
+        const container = document.getElementById('docList'); // We replace the list content
+        container.innerHTML = '<div style="text-align:center; padding:20px;">Loading Profile...</div>';
+
+        db.collection('users').doc(docId).get().then(doc => {
+            if(!doc.exists) { container.innerHTML = 'Error: Doctor not found'; return; }
+            const d = doc.data();
+
+            const avatarImg = d.profilePic 
+                ? `<img src="${d.profilePic}" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:4px solid var(--secondary); margin-bottom:15px;">` 
+                : `<div style="width:100px; height:100px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280; margin:0 auto 15px auto; font-size:2rem;"><i class="fas fa-user-md"></i></div>`;
+
+            // HTML for the Booking View
+            container.innerHTML = `
+                <div style="animation:fadeIn 0.4s;">
+                    <button onclick="openFindDoctorModal()" style="background:none; border:none; color:var(--gray); cursor:pointer; margin-bottom:15px; display:flex; align-items:center; gap:5px;"><i class="fas fa-arrow-left"></i> Back to List</button>
+                    
+                    <div style="text-align:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #E5E7EB;">
+                        ${avatarImg}
+                        <h2 style="font-size:1.5rem; margin-bottom:5px;">Dr. ${d.name}</h2>
+                        <p style="color:var(--primary); font-weight:600;">${d.specialist || 'Medical Specialist'}</p>
+                        <p style="color:var(--gray); font-size:0.9rem; margin-top:5px;">${d.degrees || ''}</p>
+                        ${d.address ? `<p style="color:var(--gray); font-size:0.9rem; margin-top:5px;"><i class="fas fa-map-marker-alt"></i> ${d.address}</p>` : ''}
+                    </div>
+
+                    <div style="background:#F9FAFB; padding:20px; border-radius:12px; border:1px solid #E5E7EB;">
+                        
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--dark);">Select Appointment Time</label>
+                            <div style="background:white; border:1px solid #E5E7EB; padding:10px; border-radius:8px; font-size:0.9rem; color:var(--gray); margin-bottom:10px;">
+                                <i class="far fa-clock"></i> Doctor's Usual Hours: <span style="color:var(--dark); font-weight:500;">${d.time || 'Not specified'}</span>
+                            </div>
+                            <input type="text" id="bookingTime" placeholder="e.g. Tomorrow at 10:00 AM" style="width:100%; padding:12px; border:1px solid #E5E7EB; border-radius:8px; outline:none;">
+                        </div>
+
+                        <div style="margin-bottom:25px;">
+                            <label style="display:block; font-weight:600; margin-bottom:12px; color:var(--dark);">Medical Records</label>
+                            
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:10px; padding:10px; background:white; border:1px solid #E5E7EB; border-radius:8px; transition:0.2s;">
+                                <input type="radio" name="docShare" value="true" checked onchange="highlightOption(this)">
+                                <div>
+                                    <span style="display:block; font-weight:500;">Let Doctor see my Documents</span>
+                                    <span style="display:block; font-size:0.8rem; color:var(--gray);">Allow access to previous reports for better diagnosis (Recommended)</span>
+                                </div>
+                            </label>
+
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px; background:white; border:1px solid #E5E7EB; border-radius:8px;">
+                                <input type="radio" name="docShare" value="false" onchange="highlightOption(this)">
+                                <div>
+                                    <span style="display:block; font-weight:500;">Don't Share Documents</span>
+                                    <span style="display:block; font-size:0.8rem; color:var(--gray);">Keep my history private</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <button class="list-btn btn-book" style="width:100%; padding:15px; font-size:1rem;" onclick="confirmBooking('${doc.id}', '${d.name}')">
+                            Confirm Booking
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Helper for visual selection
+    function highlightOption(radio) {
+        document.getElementsByName('docShare').forEach(el => {
+            el.closest('label').style.borderColor = '#E5E7EB';
+            el.closest('label').style.background = 'white';
+        });
+        if(radio.checked) {
+            radio.closest('label').style.borderColor = 'var(--primary)';
+            radio.closest('label').style.background = '#FEF2F2';
+        }
+    }
+    
+    // Updated Booking Logic
+    function confirmBooking(docId, docName) {
+        const timePref = document.getElementById('bookingTime').value;
+        const shareDocs = document.querySelector('input[name="docShare"]:checked').value === 'true';
+
+        if(!timePref) { showToast("Please enter a preferred time"); return; }
+        if(!confirm(`Confirm booking with Dr. ${docName}?`)) return;
+
+        db.collection('appointments').add({
+            patientId: currentUserData.uid, 
+            patientName: currentUserData.name,
+            doctorId: docId, 
+            doctorName: docName, 
+            status: 'pending', 
+            requestDate: new Date().toISOString(),
+            preferredTime: timePref, // Save user preference
+            shareDocuments: shareDocs // Save permission
+        }).then(() => { 
+            showToast("Request Sent Successfully!"); 
+            closeModal(); 
+        }).catch(err => {
+            console.error(err);
+            showToast("Error booking appointment");
         });
     }
 
