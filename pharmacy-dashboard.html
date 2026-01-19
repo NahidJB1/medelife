@@ -238,28 +238,33 @@
                         if(reportSnap.empty) {
                             recordDiv.innerHTML = '<small style="color:#6B7280; font-style:italic;">No prescriptions found.</small>';
                         } else {
-                            reportSnap.forEach(repDoc => {
-                                const r = repDoc.data();
-                                const date = r.timestamp ? new Date(r.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                                
-                                // Handle Manual vs File view
-                                let viewAction = '';
-                                if(r.isManual) {
-                                     viewAction = `viewManualRx('${r.content.replace(/\n/g, '\\n')}', '${r.doctorName}')`;
-                                } else {
-                                     viewAction = `viewFile('${r.fileData}')`;
-                                }
+                            // Inside performSearch -> reportSnap.forEach...
+reportSnap.forEach(repDoc => {
+    const r = repDoc.data();
+    const date = r.timestamp ? new Date(r.timestamp.toDate()).toLocaleDateString() : 'N/A';
+    
+    let viewAction = '';
+    
+    // UPDATED LOGIC
+    if(r.isManual) {
+        const safeContent = r.content.replace(/`/g, "'").replace(/\$/g, "");
+        // Calls the new modal function
+        viewAction = `openDocViewer('manual', \`${safeContent}\`, 'Prescription: Dr. ${r.doctorName}')`;
+    } else {
+        // Calls the new modal function
+        viewAction = `openDocViewer('file', '${r.fileData}', 'Prescription Document')`;
+    }
 
-                                recordDiv.innerHTML += `
-                                    <div class="list-item" style="padding:10px;">
-                                        <div>
-                                            <strong>Prescribed by Dr. ${r.doctorName}</strong><br>
-                                            <small style="color:#6B7280">${date}</small>
-                                        </div>
-                                        <button class="list-btn btn-view" onclick="${viewAction}">View Rx</button>
-                                    </div>
-                                `;
-                            });
+    recordDiv.innerHTML += `
+        <div class="list-item" style="padding:10px;">
+            <div>
+                <strong>Prescribed by Dr. ${r.doctorName}</strong><br>
+                <small style="color:#6B7280">${date}</small>
+            </div>
+            <button class="list-btn btn-view" onclick="${viewAction}">View Rx</button>
+        </div>
+    `;
+});
                         }
                     })
                     .catch(err => {
@@ -269,6 +274,31 @@
             });
         });
     }
+
+    function openDocViewer(type, content, title) {
+    const viewerModal = document.getElementById('documentViewerModal');
+    const viewerContent = document.getElementById('docViewerContent');
+    
+    let html = '';
+    if (type === 'manual') {
+        html = `
+            <h2 style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">${title}</h2>
+            <div style="background: #F9FAFB; padding: 25px; border-radius: 12px; border: 1px solid #E5E7EB; overflow-y: auto; flex: 1;">
+                <pre style="white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: #333;">${content}</pre>
+            </div>`;
+    } else {
+        html = `
+            <h3 style="margin-bottom: 10px;">${title}</h3>
+            <iframe src="${content}" style="width: 100%; flex: 1; border: none; background: #eee;"></iframe>`;
+    }
+    
+    viewerContent.innerHTML = html;
+    viewerModal.classList.add('active');
+}
+
+function closeDocViewer() {
+    document.getElementById('documentViewerModal').classList.remove('active');
+}
 
     // Add this helper for Pharmacy to view manual text prescriptions
     function viewManualRx(content, docName) {
@@ -300,5 +330,12 @@
     
   
     </script>
+    <div class="modal-overlay" id="documentViewerModal" style="z-index: 3000;">
+    <div class="dashboard-modal" style="width: 90%; height: 85%; max-width: 900px; display: flex; flex-direction: column;">
+        <span class="close-modal" onclick="closeDocViewer()">&times;</span>
+        <div id="docViewerContent" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            </div>
+    </div>
+</div>
 </body>
 </html>
