@@ -86,6 +86,55 @@
 .dual-btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
 .dual-btn-row button { flex: 1; padding: 12px; border: 1px solid #E5E7EB; background: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
 .dual-btn-row button:hover { background: #F9FAFB; border-color: var(--primary); color: var(--primary); }
+
+/* --- PRINT / SAVE AS PDF STYLES --- */
+        @media print {
+            /* Hide everything by default (Sidebar, Dashboard, Background) */
+            body * {
+                visibility: hidden;
+            }
+            .sidebar, .main-content, .close-modal, .header-actions, .dashboard-tabs, #toast-box {
+                display: none !important;
+            }
+
+            /* Show ONLY the modal content (The Prescription) */
+            #documentViewerModal, #documentViewerModal * {
+                visibility: visible;
+            }
+
+            /* Position the modal content to fill the paper */
+            #documentViewerModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                z-index: 9999;
+                display: block !important;
+                padding: 0;
+            }
+
+            .dashboard-modal {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            /* Hide the Print Button and Scrollbars on the paper */
+            .no-print {
+                display: none !important;
+            }
+            
+            /* Remove gray background from Rx body for cleaner ink usage */
+            .rx-body-bg {
+                background: none !important;
+                border: 1px solid #000 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -508,7 +557,6 @@
             const dPhone = drDetails.phone || '';
             const dEmail = drDetails.email || '';
 
-            // RESTORED OLD FORMAT DESIGN
             html = `
                 <div class="rx-paper" style="border: none; box-shadow: none; padding: 10px; max-width: 800px; margin: 0 auto;">
                     
@@ -546,7 +594,7 @@
                         </div>
                     </div>
 
-                    <div style="background: #FAFAFA; padding: 30px; border-radius: 8px; border: 1px dashed #E5E7EB; min-height: 250px; position: relative;">
+                    <div class="rx-body-bg" style="background: #FAFAFA; padding: 30px; border-radius: 8px; border: 1px dashed #E5E7EB; min-height: 250px; position: relative;">
                         <span style="font-family: 'Times New Roman', serif; font-style: italic; font-weight: bold; font-size: 2rem; color: #333; position: absolute; top: 20px; left: 20px;">Rx</span>
                         <div style="margin-top: 50px; white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 1rem; line-height: 1.8; color: #1F2937;">${content}</div>
                     </div>
@@ -561,8 +609,10 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
-                    <button class="list-btn btn-book" onclick="window.print()"><i class="fas fa-print"></i> Print Prescription</button>
+                <div class="no-print" style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                    <button class="list-btn btn-book" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print / Save as PDF
+                    </button>
                 </div>
             `;
         } else {
@@ -576,7 +626,6 @@
         viewerContent.innerHTML = html;
         viewerModal.classList.add('active');
     }
-
     // --- HELPER: Tabs Switcher ---
     function switchModalTab(tab) {
         document.querySelectorAll('.m-tab-item').forEach(el => el.classList.remove('active'));
