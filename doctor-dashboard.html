@@ -299,6 +299,7 @@
     }
 
     // --- UPDATED DOCTOR PATIENT VIEW ---
+    // --- UPDATED DOCTOR PATIENT VIEW ---
     let currentViewingPatient = null;
     let currentAppointmentId = null;
 
@@ -307,21 +308,20 @@
         modalContent.innerHTML = `<h2>Loading Patient...</h2>`;
         modal.classList.add('active');
 
-        // 1. Fetch Doctor Details (for Prescription Header) & Appointment Status
+        // 1. Fetch Doctor Details & Appointment Status
         Promise.all([
-            db.collection('users').doc(currentUserData.uid).get(), // Doctor Info
-            db.collection('users').doc(pid).get(), // Patient Info
+            db.collection('users').doc(currentUserData.uid).get(),
+            db.collection('users').doc(pid).get(),
             db.collection('appointments')
                 .where('doctorId', '==', currentUserData.uid)
                 .where('patientId', '==', pid)
-                .where('status', '==', 'accepted') // Only look for confirmed bookings
+                .where('status', '==', 'accepted')
                 .limit(1).get()
         ]).then(([docSnap, patSnap, aptSnap]) => {
             
             const docInfo = docSnap.data();
             const patInfo = patSnap.exists ? patSnap.data() : { name: pname };
             
-            // Check Access Permissions
             let hasAccess = false;
             let accessRequestStatus = null;
             
@@ -331,12 +331,11 @@
                 hasAccess = apt.shareDocuments === true;
                 accessRequestStatus = apt.accessRequest || null;
             } else {
-                // If no accepted appointment, assume no access
                 modalContent.innerHTML = `<p style="color:red; text-align:center;">No active appointment found with this patient.</p>`;
                 return;
             }
 
-            // Render Header (Patient Profile Summary)
+            // Render Header
             let html = `
                 <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
                     <img src="${patInfo.profilePic || 'https://via.placeholder.com/60'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
@@ -370,9 +369,23 @@
                     </div>
 
                     <div id="tab-reports" class="m-tab-content" style="display:none;">
-                        <button class="list-btn btn-book" style="width:100%; margin-bottom:15px; padding:12px;" onclick="triggerUpload('Report')">
-                            <i class="fas fa-cloud-upload-alt"></i> Upload Lab Report
-                        </button>
+                        <div style="background:#F9FAFB; padding:15px; border-radius:10px; border:1px solid #E5E7EB; margin-bottom:15px;">
+                            <label style="font-size:0.85rem; font-weight:600; color:var(--gray); display:block; margin-bottom:8px;">Document Type:</label>
+                            <select id="reportCategorySelect" class="rx-input" style="min-height:auto; height:45px; margin-bottom:10px; background:white;">
+                                <option value="General Report">General Lab Report</option>
+                                <option value="Blood Test">Blood Test</option>
+                                <option value="X-Ray">X-Ray</option>
+                                <option value="ECG">ECG</option>
+                                <option value="MRI">MRI</option>
+                                <option value="CT Scan">CT Scan</option>
+                                <option value="Ultrasound">Ultrasound</option>
+                                <option value="Discharge Summary">Discharge Summary</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <button class="list-btn btn-book" style="width:100%; padding:10px;" onclick="triggerUpload('Report')">
+                                <i class="fas fa-cloud-upload-alt"></i> Select File & Upload
+                            </button>
+                        </div>
                         <div id="reportHistoryList">Loading reports...</div>
                     </div>
                     
@@ -380,7 +393,6 @@
                     <input type="hidden" id="uploadType">
                 `;
             } else {
-                // Access Denied View
                 html += `
                     <div class="access-denied-box">
                         <i class="fas fa-lock" style="font-size:3rem; color:#9CA3AF; margin-bottom:15px;"></i>
@@ -396,7 +408,6 @@
 
             modalContent.innerHTML = html;
 
-            // Load History if access granted
             if(hasAccess) {
                 loadPatientHistory('Prescription', 'prescHistoryList');
                 loadPatientHistory('Report', 'reportHistoryList');
@@ -483,7 +494,15 @@
     }
 
     function handleDocUpload(input) {
-        const type = document.getElementById('uploadType').value;
+        const type = document.getElementById('uploadType').value; // 'Prescription' or 'Report'
+        
+        // Determine specific category
+        let specificCategory = type; 
+        if(type === 'Report') {
+            const selector = document.getElementById('reportCategorySelect');
+            if(selector) specificCategory = selector.value; // e.g., "X-Ray"
+        }
+
         if(input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -492,12 +511,13 @@
                     patientName: currentViewingPatient.name,
                     doctorId: currentUserData.uid,
                     doctorName: currentUserData.name,
-                    reportType: type, // 'Prescription' or 'Report'
+                    reportType: type,          // Used for Tab Filtering (Prescription vs Report)
+                    docCategory: specificCategory, // Used for Display (e.g., X-Ray, ECG)
                     fileData: e.target.result,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => {
-                    showToast(type + " Uploaded");
-                    openDoctorPatientView(currentViewingPatient.id, currentViewingPatient.name);
+                    showToast(specificCategory + " Uploaded");
+                    openDoctorPatientView(currentViewingPatient.id, currentViewingPatient.name); // Refresh to show new item
                 });
             }
             reader.readAsDataURL(input.files[0]);
@@ -511,8 +531,8 @@
         
         db.collection('reports')
             .where('patientId', '==', currentViewingPatient.id)
-            .where('reportType', '==', typeFilter) // Filter by tab
-            .orderBy('timestamp', 'desc') // Requires Index*
+            .where('reportType', '==', typeFilter) 
+            .orderBy('timestamp', 'desc') 
             .get()
             .then(snap => {
                 container.innerHTML = '';
@@ -522,7 +542,9 @@
                     const d = doc.data();
                     const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : 'N/A';
                     
-                    // Button based on Manual vs File
+                    // Use docCategory if available, otherwise fallback to reportType
+                    const displayTitle = d.docCategory ? d.docCategory : d.reportType;
+
                     let actionBtn = '';
                     if(d.isManual) {
                         actionBtn = `<button class="list-btn btn-view" onclick="alert('${d.content.replace(/\n/g, '\\n')}')"><i class="fas fa-eye"></i> Read</button>`;
@@ -533,17 +555,16 @@
                     container.innerHTML += `
                         <div class="list-item" style="background:#F9FAFB;">
                             <div>
-                                <strong>${d.doctorName || 'Uploaded'}</strong><br>
-                                <small style="color:var(--gray);">${date}</small>
+                                <strong>${displayTitle}</strong>
+                                <br>
+                                <small style="color:var(--gray);">${date} • By: ${d.doctorName}</small>
                             </div>
                             ${actionBtn}
                         </div>`;
                 });
             }).catch(err => {
-                // If index missing, fallback client sort (simple error handling)
-                console.log("Index might be missing, trying simple query", err);
-                container.innerHTML = "<small>Refreshing...</small>";
-                // Fallback query logic omitted for brevity, usually Firestore console will give index link
+                console.log("Error loading history:", err);
+                container.innerHTML = "<small>Refresh required (Indexing).</small>";
             });
     }
 
