@@ -441,16 +441,65 @@
     function openPatientSchedule() {
         modalContent.innerHTML = `<h2>My Schedule</h2><div id="schedList">Loading...</div>`;
         modal.classList.add('active');
+        
         db.collection('appointments').where('patientId', '==', currentUserData.uid).get().then(snap => {
             const l = document.getElementById('schedList'); l.innerHTML = '';
+            
             if(snap.empty) { l.innerHTML = '<p>No appointments.</p>'; return; }
-            let apps = []; snap.forEach(doc => apps.push(doc.data()));
+            
+            let apps = []; 
+            snap.forEach(doc => apps.push({ ...doc.data(), id: doc.id }));
+            
+            // Sort client side for simplicity
             apps.sort((a,b) => new Date(b.requestDate) - new Date(a.requestDate));
+            
             apps.forEach(d => {
-                let badge = d.status === 'accepted' ? `<span style="color:green">Booked: ${d.scheduledTime||'TBA'}</span>` : 
-                            d.status === 'pending' ? '<span style="color:orange">Pending</span>' : '<span style="color:red">Declined</span>';
-                l.innerHTML += `<div class="list-item" style="display:block"><strong>Dr. ${d.doctorName}</strong><br>${badge}</div>`;
+                let statusBadge = '';
+                let actionPanel = '';
+
+                // 1. Badge Logic
+                if (d.status === 'accepted') statusBadge = `<span style="color:green; font-weight:600;">Booked: ${d.scheduledTime||'TBA'}</span>`;
+                else if (d.status === 'pending') statusBadge = '<span style="color:orange; font-weight:600;">Request Pending</span>';
+                else statusBadge = '<span style="color:red; font-weight:600;">Declined</span>';
+
+                // 2. Access Request Logic (Feature B)
+                if (d.status === 'accepted' && d.accessRequest === 'pending') {
+                    actionPanel = `
+                        <div style="background:#FEF2F2; border:1px solid #FCA5A5; padding:10px; border-radius:8px; margin-top:10px;">
+                            <p style="font-size:0.85rem; color:#B91C1C; margin-bottom:8px;"><i class="fas fa-exclamation-circle"></i> Dr. ${d.doctorName} requests access to your medical records.</p>
+                            <div style="display:flex; gap:10px;">
+                                <button class="list-btn btn-book" onclick="respondToAccess('${d.id}', true)">Allow Access</button>
+                                <button class="list-btn" style="background:#9CA3AF; color:white;" onclick="respondToAccess('${d.id}', false)">Deny</button>
+                            </div>
+                        </div>
+                    `;
+                } else if (d.status === 'accepted' && d.shareDocuments === true) {
+                     actionPanel = `<div style="margin-top:5px; font-size:0.8rem; color:green;"><i class="fas fa-check-circle"></i> Records shared with doctor</div>`;
+                }
+
+                l.innerHTML += `
+                    <div class="list-item" style="display:block; padding:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <strong style="font-size:1.1rem;">Dr. ${d.doctorName}</strong>
+                                <br>${statusBadge}
+                            </div>
+                            <small style="color:var(--gray);">${new Date(d.requestDate).toLocaleDateString()}</small>
+                        </div>
+                        ${actionPanel}
+                    </div>`;
             });
+        });
+    }
+
+    // Add this helper function immediately after
+    function respondToAccess(aptId, allow) {
+        const updateData = { accessRequest: 'resolved' };
+        if(allow) updateData.shareDocuments = true;
+        
+        db.collection('appointments').doc(aptId).update(updateData).then(() => {
+            showToast(allow ? "Access Granted" : "Request Denied");
+            openPatientSchedule(); // Refresh list
         });
     }
 
