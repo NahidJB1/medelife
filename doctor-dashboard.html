@@ -310,7 +310,6 @@
         modalContent.innerHTML = `<h2>Loading Patient...</h2>`;
         modal.classList.add('active');
 
-        // 1. Fetch Doctor Details & Appointment Status
         Promise.all([
             db.collection('users').doc(currentUserData.uid).get(),
             db.collection('users').doc(pid).get(),
@@ -326,6 +325,7 @@
             
             let hasAccess = false;
             let accessRequestStatus = null;
+            let currentAppointmentId = null;
             
             if(!aptSnap.empty) {
                 const apt = aptSnap.docs[0].data();
@@ -337,7 +337,7 @@
                 return;
             }
 
-            // Render Header
+            // --- Render Header ---
             let html = `
                 <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
                     <img src="${patInfo.profilePic || 'https://via.placeholder.com/60'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
@@ -350,8 +350,19 @@
                     </div>
                 </div>`;
 
-            // Render Body based on Permissions
+            // --- Render Body ---
             if (hasAccess) {
+                // Prepare Doctor Details Object for the Writer
+                const drDetailsObj = JSON.stringify({
+                    name: docInfo.name,
+                    spec: docInfo.specialist || 'General Physician',
+                    deg: docInfo.degrees || '',
+                    addr: docInfo.address || '',
+                    time: docInfo.time || '',
+                    phone: docInfo.phone || '',
+                    email: docInfo.email || ''
+                }).replace(/"/g, '&quot;');
+
                 html += `
                     <div class="modal-tabs">
                         <div class="m-tab-item active" onclick="switchModalTab('presc')">Prescriptions</div>
@@ -360,7 +371,7 @@
 
                     <div id="tab-presc" class="m-tab-content">
                         <div class="dual-btn-row">
-                            <button onclick="renderWritePrescription('${patInfo.name}', '${patInfo.gender||''}', '${patInfo.age||''}', '${docInfo.name}', '${docInfo.specialist||''}', '${docInfo.degrees||''}', '${docInfo.address||''}', '${docInfo.email||''}')">
+                            <button onclick="renderWritePrescription('${patInfo.name}', '${patInfo.gender||''}', '${patInfo.age||''}', ${drDetailsObj})">
                                 <i class="fas fa-pen"></i> Write Prescription
                             </button>
                             <button onclick="triggerUpload('Prescription')">
@@ -442,14 +453,34 @@
     }
 
     // --- HELPER: Write Prescription UI ---
-    function renderWritePrescription(pName, pGen, pAge, dName, dSpec, dDeg, dAddr, dCont) {
-        // Auto-fill Data
+   // --- HELPER: Write Prescription UI (Updated Layout) ---
+    // We store the current doctor details in a global variable for saving later
+    let tempDoctorDetails = {};
+
+    function renderWritePrescription(pName, pGen, pAge, docDetails) {
+        tempDoctorDetails = docDetails; // Save for the 'save' function
+
+        // New Header Layout Logic
         const headerHtml = `
-            <div class="rx-header">
-                <h3>Dr. ${dName}</h3>
-                <small style="display:block; color:var(--gray);">${dSpec} | ${dDeg}</small>
-                <small style="display:block; color:var(--gray);">${dAddr} | ${dCont}</small>
+            <div class="rx-header" style="border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
+                
+                <div style="flex: 1; min-width: 200px; text-align: left;">
+                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:10px;">
+                         <svg width="24" height="24" viewBox="0 0 100 100"><rect x="35" y="10" width="30" height="80" rx="5" fill="#EF4444" /><rect x="10" y="35" width="80" height="30" rx="5" fill="#EF4444" /></svg>
+                         <div style="font-weight:700; font-size:16px; line-height:1;"><span style="color:#EF4444;">MED</span><span style="color:#000;">e</span><span style="color:#22C55E;">LIFE</span></div>
+                    </div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 2px;">Dr. ${docDetails.name}</h3>
+                    <p style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">${docDetails.spec}</p>
+                    <p style="color: var(--gray); font-size: 0.85rem;">${docDetails.deg}</p>
+                </div>
+
+                <div style="flex: 1; min-width: 200px; text-align: right; font-size: 0.85rem; color: #374151;">
+                    <p style="margin-bottom: 5px;"><strong>Chamber:</strong><br>${docDetails.addr || 'Address not set'}</p>
+                    <p style="margin-bottom: 5px;"><strong>Schedule:</strong> ${docDetails.time || 'Not set'}</p>
+                    <p><strong>Contact:</strong><br>${docDetails.phone || ''}<br>${docDetails.email || ''}</p>
+                </div>
             </div>
+
             <div class="rx-meta">
                 <span><strong>Pt:</strong> ${pName}</span>
                 <span>${pGen ? pGen : 'Gen: -'} / ${pAge ? pAge+'y' : 'Age: -'}</span>
@@ -473,15 +504,16 @@
         const content = document.getElementById('rxBody').value;
         if(!content) { showToast("Prescription is empty"); return; }
         
-        // In a real app, generate PDF here. For now, saving as text report.
         db.collection('reports').add({
             patientId: currentViewingPatient.id,
             patientName: currentViewingPatient.name,
             doctorId: currentUserData.uid,
             doctorName: currentUserData.name,
-            reportType: 'Prescription', // Specific type
+            reportType: 'Prescription',
             isManual: true,
             content: content,
+            // SAVE THE SNAPSHOT of doctor details so the prescription looks the same forever
+            doctorDetails: tempDoctorDetails, 
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             showToast("Prescription Saved");
@@ -526,64 +558,6 @@
         }
     }
 
-    // --- HELPER: Load History List ---
-    function loadPatientHistory(typeFilter, containerId) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '<small>Loading...</small>';
-        
-        db.collection('reports')
-            .where('patientId', '==', currentViewingPatient.id)
-            .where('reportType', '==', typeFilter) 
-            .orderBy('timestamp', 'desc') 
-            .get()
-            .then(snap => {
-                container.innerHTML = '';
-                if(snap.empty) { container.innerHTML = `<small style="color:var(--gray)">No ${typeFilter}s found.</small>`; return; }
-                
-                // Inside loadPatientHistory function...
-snap.forEach(doc => {
-        const d = doc.data();
-        const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : 'N/A';
-        const displayTitle = d.docCategory ? d.docCategory : d.reportType;
-
-        // Use saved patient name or fallback to current viewing patient
-        const pName = d.patientName || currentViewingPatient.name || 'Patient';
-        const docName = d.doctorName || 'Unknown Doctor';
-
-        let actionBtn = '';
-        
-        // UPDATED BUTTON LOGIC
-        if(d.isManual) {
-            // Escape special characters to prevent code breaking
-            const safeContent = d.content.replace(/`/g, "'").replace(/\$/g, "").replace(/\\/g, "\\\\");
-            
-            // We pass: 'manual', content, Title, DoctorName, PatientName, Date
-            actionBtn = `<button class="list-btn btn-view" 
-                onclick="openDocViewer('manual', \`${safeContent}\`, '${displayTitle}', '${docName}', '${pName}', '${date}')">
-                <i class="fas fa-eye"></i> Read Rx
-            </button>`;
-        } else {
-            actionBtn = `<button class="list-btn btn-view" 
-                onclick="openDocViewer('file', '${d.fileData}', '${displayTitle}')">
-                <i class="fas fa-file-alt"></i> View File
-            </button>`;
-        }
-
-        container.innerHTML += `
-            <div class="list-item" style="background:#F9FAFB;">
-                <div>
-                    <strong>${displayTitle}</strong>
-                    <br>
-                    <small style="color:var(--gray);">${date} • By: ${docName}</small>
-                </div>
-                ${actionBtn}
-            </div>`;
-    });
-            }).catch(err => {
-                console.log("Error loading history:", err);
-                container.innerHTML = "<small>Refresh required (Indexing).</small>";
-            });
-    }
 
     // --- SHARED UTILS ---
     function viewFile(data) { const win = window.open(); win.document.write(`<iframe src="${data}" style="width:100%;height:100%;border:none;"></iframe>`); }
@@ -635,67 +609,142 @@ snap.forEach(doc => {
         });
     }
 
-    // --- NEW DOCUMENT VIEWER FUNCTIONS ---
-// --- NEW PROFESSIONAL DOCUMENT VIEWER ---
-function openDocViewer(type, content, title, docName = 'Doctor', patName = 'Patient', dateStr = 'N/A') {
-    const viewerModal = document.getElementById('documentViewerModal');
-    const viewerContent = document.getElementById('docViewerContent');
-    
-    let html = '';
-    
-    if (type === 'manual') {
-        // PROFESSIONAL RX PAPER VIEW
-        html = `
-            <div class="rx-paper" style="border: none; box-shadow: none; padding: 10px;">
-                <div class="rx-header" style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
-                    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px;">
-                        <span style="font-weight:700; font-size:1.5rem; color:#EF4444;">MED<span style="color:#22C55E">e</span>LIFE</span>
-                    </div>
-                    <h2 style="font-size: 1.4rem; margin: 5px 0;">Dr. ${docName}</h2>
-                    <small style="color: #6B7280; text-transform: uppercase; letter-spacing: 1px;">Medical Professional</small>
-                </div>
+// --- HELPER: Load History List (Updated to pass new details) ---
+    function loadPatientHistory(typeFilter, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '<small>Loading...</small>';
+        
+        db.collection('reports')
+            .where('patientId', '==', currentViewingPatient.id)
+            .where('reportType', '==', typeFilter) 
+            .orderBy('timestamp', 'desc') 
+            .get()
+            .then(snap => {
+                container.innerHTML = '';
+                if(snap.empty) { container.innerHTML = `<small style="color:var(--gray)">No ${typeFilter}s found.</small>`; return; }
+                
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                    const displayTitle = d.docCategory ? d.docCategory : d.reportType;
+                    const pName = d.patientName || currentViewingPatient.name || 'Patient';
+                    const docName = d.doctorName || 'Unknown Doctor';
 
-                <div class="rx-meta" style="display: flex; justify-content: space-between; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 25px; font-size: 0.95rem; color: #374151;">
-                    <div>
-                        <span style="display:block; margin-bottom:5px;"><strong>Patient Name:</strong> ${patName}</span>
-                        <span style="display:block;"><strong>Prescription ID:</strong> #${Math.floor(Math.random()*100000)}</span>
-                    </div>
-                    <div style="text-align:right;">
-                        <span style="display:block; margin-bottom:5px;"><strong>Date:</strong> ${dateStr}</span>
-                        <span style="display:block;"><strong>Consultation:</strong> Online</span>
-                    </div>
-                </div>
+                    let actionBtn = '';
+                    
+                    if(d.isManual) {
+                        const safeContent = d.content.replace(/`/g, "'").replace(/\$/g, "").replace(/\\/g, "\\\\");
+                        
+                        // Pass saved Doctor Details if available, else empty object
+                        const drDetails = d.doctorDetails ? JSON.stringify(d.doctorDetails).replace(/"/g, '&quot;') : '{}';
 
-                <div style="background: #F9FAFB; padding: 25px; border-radius: 8px; border: 1px dashed #E5E7EB; min-height: 200px;">
-                    <h4 style="color:#333; margin-bottom:15px; font-family:serif; font-size:1.2rem;">Rx</h4>
-                    <pre style="white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 1rem; line-height: 1.8; color: #1F2937;">${content}</pre>
-                </div>
+                        actionBtn = `<button class="list-btn btn-view" 
+                            onclick="openDocViewer('manual', \`${safeContent}\`, '${displayTitle}', '${docName}', '${pName}', '${date}', ${drDetails})">
+                            <i class="fas fa-eye"></i> Read Rx
+                        </button>`;
+                    } else {
+                        actionBtn = `<button class="list-btn btn-view" 
+                            onclick="openDocViewer('file', '${d.fileData}', '${displayTitle}')">
+                            <i class="fas fa-file-alt"></i> View File
+                        </button>`;
+                    }
 
-                <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <small style="color: #9CA3AF;">Generated digitally via MEDeLIFE</small>
-                    <div style="text-align: center;">
-                        <div style="font-family: 'Cursive', serif; font-size: 1.5rem; color: #EF4444; opacity: 0.7;">Signed</div>
-                        <div style="border-top: 1px solid #333; width: 150px; margin-top: 5px;"></div>
-                        <small>Dr. ${docName}</small>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
-                <button class="list-btn btn-book" onclick="window.print()"><i class="fas fa-print"></i> Print Prescription</button>
-            </div>
-        `;
-    } else {
-        // File View (PDF/Image) - Remains the same
-        html = `
-            <h3 style="margin-bottom: 10px;">${title}</h3>
-            <iframe src="${content}" style="width: 100%; flex: 1; border: 1px solid #E5E7EB; border-radius: 8px; background: #f1f1f1;"></iframe>
-        `;
+                    container.innerHTML += `
+                        <div class="list-item" style="background:#F9FAFB;">
+                            <div>
+                                <strong>${displayTitle}</strong>
+                                <br>
+                                <small style="color:var(--gray);">${date} • By: ${docName}</small>
+                            </div>
+                            ${actionBtn}
+                        </div>`;
+                });
+            }).catch(err => {
+                console.log("Error loading history:", err);
+                container.innerHTML = "<small>Refresh required (Indexing).</small>";
+            });
     }
-    
-    viewerContent.innerHTML = html;
-    viewerModal.classList.add('active');
-}
+
+    // --- NEW PROFESSIONAL DOCUMENT VIEWER (Updated Layout) ---
+    function openDocViewer(type, content, title, docName = 'Doctor', patName = 'Patient', dateStr = 'N/A', drDetails = {}) {
+        const viewerModal = document.getElementById('documentViewerModal');
+        const viewerContent = document.getElementById('docViewerContent');
+        
+        let html = '';
+        
+        if (type === 'manual') {
+            // Safe fallbacks if old prescriptions don't have the new details saved
+            const dSpec = drDetails.spec || 'Medical Professional';
+            const dDeg = drDetails.deg || '';
+            const dAddr = drDetails.addr || 'Address not available';
+            const dTime = drDetails.time || '';
+            const dPhone = drDetails.phone || '';
+            const dEmail = drDetails.email || '';
+
+            // PROFESSIONAL RX PAPER VIEW (SPLIT LAYOUT)
+            html = `
+                <div class="rx-paper" style="border: none; box-shadow: none; padding: 10px;">
+                    
+                    <div class="rx-header" style="border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
+                        
+                        <div style="flex: 1; min-width: 200px; text-align: left;">
+                             <div style="display:flex; align-items:center; gap:5px; margin-bottom:15px;">
+                                 <svg width="28" height="28" viewBox="0 0 100 100"><rect x="35" y="10" width="30" height="80" rx="5" fill="#EF4444" /><rect x="10" y="35" width="80" height="30" rx="5" fill="#EF4444" /></svg>
+                                 <div style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; line-height: 1;"><span style="color: #EF4444;">MED</span><span style="color: #000;">e</span><span style="color: #22C55E;">LIFE</span></div>
+                             </div>
+                             <h2 style="font-size: 1.4rem; margin: 5px 0;">Dr. ${docName}</h2>
+                             <p style="color: var(--primary); font-weight: 600; font-size: 0.95rem;">${dSpec}</p>
+                             <p style="color: #6B7280; font-size: 0.9rem;">${dDeg}</p>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px; text-align: right; font-size: 0.9rem; color: #374151; display:flex; flex-direction:column; justify-content:center;">
+                             <p style="margin-bottom: 8px;"><strong>Chamber:</strong><br>${dAddr}</p>
+                             ${dTime ? `<p style="margin-bottom: 8px;"><strong>Schedule:</strong> ${dTime}</p>` : ''}
+                             <p><strong>Contact:</strong><br>${dPhone}<br>${dEmail}</p>
+                        </div>
+                    </div>
+
+                    <div class="rx-meta" style="display: flex; justify-content: space-between; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 25px; font-size: 0.95rem; color: #374151;">
+                        <div>
+                            <span style="display:block; margin-bottom:5px;"><strong>Patient Name:</strong> ${patName}</span>
+                            <span style="display:block;"><strong>Rx ID:</strong> #${Math.floor(Math.random()*100000)}</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="display:block; margin-bottom:5px;"><strong>Date:</strong> ${dateStr}</span>
+                            <span style="display:block;"><strong>Consultation:</strong> Online</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #F9FAFB; padding: 25px; border-radius: 8px; border: 1px dashed #E5E7EB; min-height: 200px;">
+                        <h4 style="color:#333; margin-bottom:15px; font-family:serif; font-size:1.5rem; font-style:italic;">Rx</h4>
+                        <pre style="white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 1rem; line-height: 1.8; color: #1F2937;">${content}</pre>
+                    </div>
+
+                    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <small style="color: #9CA3AF;">Generated digitally via MEDeLIFE</small>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Cursive', serif; font-size: 1.5rem; color: #EF4444; opacity: 0.7;">Signed</div>
+                            <div style="border-top: 1px solid #333; width: 150px; margin-top: 5px;"></div>
+                            <small>Dr. ${docName}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                    <button class="list-btn btn-book" onclick="window.print()"><i class="fas fa-print"></i> Print Prescription</button>
+                </div>
+            `;
+        } else {
+            // File View
+            html = `
+                <h3 style="margin-bottom: 10px;">${title}</h3>
+                <iframe src="${content}" style="width: 100%; flex: 1; border: 1px solid #E5E7EB; border-radius: 8px; background: #f1f1f1;"></iframe>
+            `;
+        }
+        
+        viewerContent.innerHTML = html;
+        viewerModal.classList.add('active');
+    }
 
 function closeDocViewer() {
     document.getElementById('documentViewerModal').classList.remove('active');
