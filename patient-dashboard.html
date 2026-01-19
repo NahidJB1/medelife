@@ -89,13 +89,13 @@
             <div class="nav-item" onclick="window.location.href='community.html'"><i class="fas fa-users"></i> Community</div>
         </div>
 
-        <div class="user-mini-profile">
-            <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
-            <div>
-                <h4 id="sideName" style="font-size: 0.9rem;">Patient</h4>
-                <p id="sideRole" style="font-size: 0.75rem; color: var(--gray);">Personal Account</p>
-            </div>
-        </div>
+        <div class="user-mini-profile" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+    <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
+    <div>
+        <h4 id="sideName" style="font-size: 0.9rem;">Patient</h4>
+        <p id="sideRole" style="font-size: 0.75rem; color: var(--gray);">Personal Account</p>
+    </div>
+</div>
     </aside>
 
     <main class="main-content">
@@ -164,6 +164,11 @@
     const stableId = storedEmail;
 
     const currentUserData = { name: name, role: 'patient', uid: stableId, email: storedEmail };
+    db.collection('users').doc(stableId).get().then(doc => {
+    if(doc.exists && doc.data().profilePic) {
+        document.getElementById('sideAvatar').src = doc.data().profilePic;
+    }
+});
 
     // SYNC PATIENT: Ensures patient exists in DB with Email ID
     db.collection('users').doc(stableId).set({
@@ -293,7 +298,7 @@
 
                 list.innerHTML += `<div class="list-item">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280;"><i class="fas fa-user-md"></i></div>
+                        const avatarImg = d.profilePic ? `<img src="${d.profilePic}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">` : `<div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280;"><i class="fas fa-user-md"></i></div>`;
                         <span style="font-weight:600;">Dr. ${d.name}</span>
                     </div> 
                     ${actionArea}
