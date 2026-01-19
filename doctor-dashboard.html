@@ -90,13 +90,13 @@
             <div class="nav-item" onclick="window.location.href='community.html'"><i class="fas fa-users"></i> Community</div>
         </div>
 
-        <div class="user-mini-profile">
-            <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
-            <div>
-                <h4 id="sideName" style="font-size: 0.9rem;">Doctor</h4>
-                <p id="sideRole" style="font-size: 0.75rem; color: var(--gray);">Medical Professional</p>
-            </div>
-        </div>
+        <div class="user-mini-profile" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+    <img id="sideAvatar" src="https://via.placeholder.com/150" class="mini-avatar">
+    <div>
+        <h4 id="sideName" style="font-size: 0.9rem;">Doctor</h4>
+        <p id="sideRole" style="font-size: 0.75rem; color: var(--gray);">Medical Professional</p>
+    </div>
+</div>
     </aside>
 
     <main class="main-content">
@@ -166,6 +166,11 @@
     const stableId = storedEmail; // ID is now "doctor@gmail.com"
 
     const currentUserData = { name: name, role: 'doctor', uid: stableId, email: storedEmail };
+    db.collection('users').doc(stableId).get().then(doc => {
+    if(doc.exists && doc.data().profilePic) {
+        document.getElementById('sideAvatar').src = doc.data().profilePic;
+    }
+});
     
     document.getElementById('sideName').innerText = name;
     document.getElementById('welcomeTitle').innerText = "Hello, " + name;
