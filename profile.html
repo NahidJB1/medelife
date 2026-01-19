@@ -157,23 +157,102 @@
     <script>
         const db = firebase.firestore();
         
-        // 1. Get Context
+        // --- 1. HELPER FUNCTIONS (Must be defined first) ---
+        
+        function generateOptions(start, end, step = 1) {
+            let ops = '';
+            for(let i=start; i<=end; i+=step) {
+                let val = i < 10 ? '0'+i : i;
+                ops += `<option value="${val}">${val}</option>`;
+            }
+            return ops;
+        }
+
+        function toggleDay(el) { el.classList.toggle('selected'); }
+
+        function addScheduleRow() {
+            // Get Days
+            const daysMap = { 'Mon':1, 'Tue':2, 'Wed':3, 'Thu':4, 'Fri':5, 'Sat':6, 'Sun':7 };
+            const selectedEls = Array.from(document.querySelectorAll('.day-circle.selected'));
+            
+            if(selectedEls.length === 0) { alert("Select at least one day"); return; }
+            
+            selectedEls.sort((a,b) => daysMap[a.getAttribute('data-d')] - daysMap[b.getAttribute('data-d')]);
+            const dayNames = selectedEls.map(el => el.getAttribute('data-d'));
+
+            // Format Day String
+            let dayString = dayNames.join(', ');
+            if (dayNames.length > 2 && isConsecutive(selectedEls, daysMap)) {
+                dayString = `${dayNames[0]} - ${dayNames[dayNames.length-1]}`;
+            } else if(dayNames.length === 7) dayString = "Everyday";
+
+            // Get Time
+            const t = {
+                oh: document.getElementById('openH').value,
+                om: document.getElementById('openM').value,
+                oa: document.getElementById('openAmPm').value,
+                ch: document.getElementById('closeH').value,
+                cm: document.getElementById('closeM').value,
+                ca: document.getElementById('closeAmPm').value
+            };
+
+            const timeString = `${t.oh}:${t.om} ${t.oa} - ${t.ch}:${t.cm} ${t.ca}`;
+            const fullString = `${dayString}: ${timeString}`;
+
+            // Create Visual Tag
+            const container = document.getElementById('scheduleContainer');
+            document.getElementById('emptySchedMsg').style.display = 'none';
+
+            const div = document.createElement('div');
+            div.className = 'schedule-tag';
+            div.innerHTML = `<span><i class="far fa-clock" style="color:var(--primary); margin-right:8px;"></i>${fullString}</span> <i class="fas fa-times" style="color:#EF4444; cursor:pointer;" onclick="removeSchedule(this)"></i>`;
+            container.appendChild(div);
+
+            // Reset UI
+            selectedEls.forEach(el => el.classList.remove('selected'));
+            updateHiddenInput();
+        }
+
+        function removeSchedule(icon) {
+            icon.closest('.schedule-tag').remove();
+            const container = document.getElementById('scheduleContainer');
+            if(container.children.length <= 1) { 
+                document.getElementById('emptySchedMsg').style.display = 'block';
+            }
+            updateHiddenInput();
+        }
+
+        function updateHiddenInput() {
+            const tags = document.querySelectorAll('.schedule-tag span');
+            let finalVal = [];
+            tags.forEach(t => finalVal.push(t.innerText));
+            document.getElementById('inp_time').value = finalVal.join(' | ');
+        }
+
+        function isConsecutive(els, map) {
+            for(let i=0; i < els.length-1; i++) {
+                if(map[els[i+1].getAttribute('data-d')] - map[els[i].getAttribute('data-d')] !== 1) return false;
+            }
+            return true;
+        }
+
+        // --- 2. MAIN LOGIC ---
+
         const role = localStorage.getItem('userRole');
         const email = localStorage.getItem('userEmail');
-        const uid = email; // Using Email as ID as per previous files
+        const uid = email; 
         const name = localStorage.getItem('userName');
 
         if(!email) window.location.href = 'index.html';
 
-        // 2. Setup UI Strings
         document.getElementById('sideName').innerText = name;
         document.getElementById('headerName').innerText = name;
-        document.getElementById('sideRole').innerText = role.charAt(0).toUpperCase() + role.slice(1);
-        document.getElementById('headerRole').innerText = role.charAt(0).toUpperCase() + role.slice(1);
+        document.getElementById('sideRole').innerText = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+        document.getElementById('headerRole').innerText = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
         document.getElementById('accEmail').value = email;
         document.getElementById('accUid').value = uid;
 
-        // 3. Render Dynamic Fields
+        // Render Dynamic Fields
         const container = document.getElementById('dynamicFields');
         
         if (role === 'patient') {
@@ -192,6 +271,7 @@
                 <div class="form-group"><label>Email</label><input type="email" class="form-input" id="inp_emEmail"></div>
             `;
         } else if (role === 'doctor') {
+            // Using the helper function here is now SAFE because it is defined above
             container.innerHTML = `
                 <div class="form-group"><label>Full Name</label><input type="text" class="form-input" id="inp_name" value="${name}"></div>
                 <div class="form-group"><label>Specialist In</label><input type="text" class="form-input" id="inp_specialist" placeholder="e.g. Cardiology"></div>
@@ -248,33 +328,48 @@
             `;
         }
 
-        // 4. Load Existing Data
+        // --- 3. DATA LOADING ---
         let currentProfilePic = null;
 
         db.collection('users').doc(uid).get().then(doc => {
             if(doc.exists) {
                 const data = doc.data();
                 
-                // Load Image
                 if(data.profilePic) {
                     document.getElementById('mainProfileImg').src = data.profilePic;
                     document.getElementById('sideAvatar').src = data.profilePic;
                     currentProfilePic = data.profilePic;
                 }
 
-                // Load Fields Loop
-                const inputs = document.querySelectorAll('input, select');
-                inputs.forEach(input => {
-                    const key = input.id.replace('inp_', ''); // e.g. "bloodGroup"
-                    if(data[key]) input.value = data[key];
-                    
-                    // Handle nested emergency contact manually if needed, 
-                    // but for simplicity we save flattened keys like emName, emRelation etc.
+                // Generic inputs
+                document.querySelectorAll('input, select').forEach(input => {
+                    const key = input.id.replace('inp_', '');
+                    if(data[key] && key !== 'time') input.value = data[key];
                 });
+
+                // Load Time Tags Specifically
+                if(data.time && document.getElementById('scheduleContainer')) {
+                    // Split by separator ' | ' if multiple, or just handle string
+                    // Note: This matches the save format below
+                    const times = data.time.split(' | ');
+                    const schedCont = document.getElementById('scheduleContainer');
+                    const emptyMsg = document.getElementById('emptySchedMsg');
+                    
+                    if(times.length > 0 && times[0] !== "") {
+                        emptyMsg.style.display = 'none';
+                        times.forEach(tStr => {
+                            if(!tStr) return;
+                            const div = document.createElement('div');
+                            div.className = 'schedule-tag';
+                            div.innerHTML = `<span><i class="far fa-clock" style="color:var(--primary); margin-right:8px;"></i>${tStr}</span> <i class="fas fa-times" style="color:#EF4444; cursor:pointer;" onclick="removeSchedule(this)"></i>`;
+                            schedCont.appendChild(div);
+                        });
+                        document.getElementById('inp_time').value = data.time;
+                    }
+                }
             }
         });
 
-        // 5. Functions
         function switchTab(tabName) {
             document.querySelectorAll('.p-nav-item').forEach(i => i.classList.remove('active'));
             document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
@@ -293,22 +388,20 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('mainProfileImg').src = e.target.result;
-                    currentProfilePic = e.target.result; // Update variable to be saved
+                    currentProfilePic = e.target.result; 
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
         function saveProfile() {
-            const formData = { profilePic: currentProfilePic }; // Start with image
+            const formData = { profilePic: currentProfilePic };
             
-            // Collect all inputs starting with inp_
             document.querySelectorAll('[id^="inp_"]').forEach(input => {
                 const key = input.id.replace('inp_', '');
                 formData[key] = input.value;
             });
 
-            // Update Name in LocalStorage if changed
             if(formData.name) localStorage.setItem('userName', formData.name);
 
             db.collection('users').doc(uid).set(formData, { merge: true }).then(() => {
@@ -324,39 +417,7 @@
         }
     </script>
 
-    <div id="timeModal" class="modal-overlay" style="z-index: 3000;">
-        <div class="dashboard-modal" style="max-width:400px; text-align:center;">
-            <h3 style="margin-bottom:5px;">Select Days & Time</h3>
-            <p style="color:var(--gray); font-size:0.9rem; margin-bottom:20px;">Tap days to apply these hours.</p>
 
-            <div style="display:flex; justify-content:center; gap:8px; margin-bottom:25px; flex-wrap:wrap;">
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Mon">M</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Tue">T</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Wed">W</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Thu">T</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Fri">F</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Sat">S</div>
-                <div class="day-circle" onclick="toggleDay(this)" data-d="Sun">S</div>
-            </div>
-
-            <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:25px;">
-                <div style="text-align:left;">
-                    <label style="font-size:0.8rem; color:var(--gray); margin-bottom:4px; display:block;">Open Time</label>
-                    <input type="time" id="pickerStart" class="form-input" style="padding:8px; width:130px; margin:0;">
-                </div>
-                <span style="margin-top:20px; color:var(--gray);">-</span>
-                <div style="text-align:left;">
-                    <label style="font-size:0.8rem; color:var(--gray); margin-bottom:4px; display:block;">Close Time</label>
-                    <input type="time" id="pickerEnd" class="form-input" style="padding:8px; width:130px; margin:0;">
-                </div>
-            </div>
-            
-            <div style="display:flex; gap:10px;">
-                <button class="list-btn" style="background:#F3F4F6; color:black; flex:1;" onclick="document.getElementById('timeModal').classList.remove('active')">Cancel</button>
-                <button class="list-btn btn-book" style="flex:1;" onclick="applyTimeSelection()">Apply Schedule</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         // --- NEW TIME PICKER FUNCTIONS ---
