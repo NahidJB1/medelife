@@ -538,30 +538,35 @@
                 container.innerHTML = '';
                 if(snap.empty) { container.innerHTML = `<small style="color:var(--gray)">No ${typeFilter}s found.</small>`; return; }
                 
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    
-                    // Use docCategory if available, otherwise fallback to reportType
-                    const displayTitle = d.docCategory ? d.docCategory : d.reportType;
+                // Inside loadPatientHistory function...
+snap.forEach(doc => {
+    const d = doc.data();
+    const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : 'N/A';
+    const displayTitle = d.docCategory ? d.docCategory : d.reportType;
 
-                    let actionBtn = '';
-                    if(d.isManual) {
-                        actionBtn = `<button class="list-btn btn-view" onclick="alert('${d.content.replace(/\n/g, '\\n')}')"><i class="fas fa-eye"></i> Read</button>`;
-                    } else {
-                        actionBtn = `<button class="list-btn btn-view" onclick="viewFile('${d.fileData}')"><i class="fas fa-file-pdf"></i> View</button>`;
-                    }
+    let actionBtn = '';
+    
+    // UPDATED LOGIC HERE
+    if(d.isManual) {
+        // Pass content to the new Viewer
+        // We use escape characters for the string to prevent JS errors
+        const safeContent = d.content.replace(/`/g, "'").replace(/\$/g, ""); 
+        actionBtn = `<button class="list-btn btn-view" onclick="openDocViewer('manual', \`${safeContent}\`, 'Prescription by Dr. ${d.doctorName}')"><i class="fas fa-eye"></i> Read</button>`;
+    } else {
+        // Pass file URL to the new Viewer
+        actionBtn = `<button class="list-btn btn-view" onclick="openDocViewer('file', '${d.fileData}', '${displayTitle}')"><i class="fas fa-file-alt"></i> View</button>`;
+    }
 
-                    container.innerHTML += `
-                        <div class="list-item" style="background:#F9FAFB;">
-                            <div>
-                                <strong>${displayTitle}</strong>
-                                <br>
-                                <small style="color:var(--gray);">${date} • By: ${d.doctorName}</small>
-                            </div>
-                            ${actionBtn}
-                        </div>`;
-                });
+    container.innerHTML += `
+        <div class="list-item" style="background:#F9FAFB;">
+            <div>
+                <strong>${displayTitle}</strong>
+                <br>
+                <small style="color:var(--gray);">${date} • By: ${d.doctorName}</small>
+            </div>
+            ${actionBtn}
+        </div>`;
+});
             }).catch(err => {
                 console.log("Error loading history:", err);
                 container.innerHTML = "<small>Refresh required (Indexing).</small>";
@@ -617,6 +622,48 @@
             content: txt, likes: [], comments: [], timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
     }
+
+    // --- NEW DOCUMENT VIEWER FUNCTIONS ---
+function openDocViewer(type, content, title) {
+    const viewerModal = document.getElementById('documentViewerModal');
+    const viewerContent = document.getElementById('docViewerContent');
+    
+    let html = '';
+    
+    if (type === 'manual') {
+        // Formatted Text View
+        html = `
+            <h2 style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">${title}</h2>
+            <div style="background: #F9FAFB; padding: 25px; border-radius: 12px; border: 1px solid #E5E7EB; overflow-y: auto; flex: 1;">
+                <pre style="white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 1.05rem; line-height: 1.6; color: #374151;">${content}</pre>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button class="list-btn btn-book" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            </div>
+        `;
+    } else {
+        // File View (PDF/Image)
+        html = `
+            <h3 style="margin-bottom: 10px;">${title}</h3>
+            <iframe src="${content}" style="width: 100%; flex: 1; border: 1px solid #E5E7EB; border-radius: 8px; background: #f1f1f1;"></iframe>
+        `;
+    }
+    
+    viewerContent.innerHTML = html;
+    viewerModal.classList.add('active');
+}
+
+function closeDocViewer() {
+    document.getElementById('documentViewerModal').classList.remove('active');
+}
     </script>
+
+    \<div class="modal-overlay" id="documentViewerModal" style="z-index: 3000;">
+    <div class="dashboard-modal" style="width: 90%; height: 85%; max-width: 900px; display: flex; flex-direction: column;">
+        <span class="close-modal" onclick="closeDocViewer()">&times;</span>
+        <div id="docViewerContent" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            </div>
+    </div>
+</div>
 </body>
 </html>
