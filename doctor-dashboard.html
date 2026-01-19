@@ -285,16 +285,69 @@
     }
 
     function openDoctorPatientView(pid, pname) {
-        modalContent.innerHTML = `<h2>Patient: ${pname}</h2><div id="histList">Loading records...</div>`;
+        // Show loading state first
+        modalContent.innerHTML = `<h2>Patient: ${pname}</h2><div id="patientProfileArea">Loading details...</div><hr style="margin:20px 0; border:0; border-top:1px solid #eee;"><h3 style="margin-bottom:15px;">Medical History</h3><div id="histList">Loading records...</div>`;
+        modal.classList.add('active');
+
+        // 1. Fetch Patient Profile Details
+        db.collection('users').doc(pid).get().then(uDoc => {
+            const area = document.getElementById('patientProfileArea');
+            if(uDoc.exists) {
+                const u = uDoc.data();
+                const avatar = u.profilePic || 'https://via.placeholder.com/150';
+                
+                // Construct Grid Layout for stats
+                area.innerHTML = `
+                    <div style="display:flex; gap:20px; align-items:start; flex-wrap:wrap;">
+                        <img src="${avatar}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--secondary);">
+                        <div style="flex:1;">
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+                                <div style="background:#F9FAFB; padding:10px; border-radius:8px;">
+                                    <small style="color:var(--gray); display:block;">Blood Group</small>
+                                    <span style="font-weight:600; color:#EF4444;">${u.bloodGroup || 'N/A'}</span>
+                                </div>
+                                <div style="background:#F9FAFB; padding:10px; border-radius:8px;">
+                                    <small style="color:var(--gray); display:block;">Height / Weight</small>
+                                    <span style="font-weight:600;">${u.height ? u.height+'cm' : '-'} / ${u.weight ? u.weight+'kg' : '-'}</span>
+                                </div>
+                                <div style="background:#F9FAFB; padding:10px; border-radius:8px;">
+                                    <small style="color:var(--gray); display:block;">Emergency Contact</small>
+                                    <span style="font-weight:600; font-size:0.9rem;">${u.emName || 'N/A'}</span>
+                                    <div style="font-size:0.8rem;">${u.emPhone || ''}</div>
+                                </div>
+                                <div style="background:#F9FAFB; padding:10px; border-radius:8px;">
+                                    <small style="color:var(--gray); display:block;">Address</small>
+                                    <span style="font-size:0.9rem;">${u.address || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                area.innerHTML = '<p style="color:var(--gray);">Patient profile details not found.</p>';
+            }
+        });
+
+        // 2. Fetch Reports (Existing Logic)
         db.collection('reports').where('patientId', '==', pid).get().then(snap => {
-            const l = document.getElementById('histList'); l.innerHTML = '';
-            let reps = []; snap.forEach(doc => reps.push(doc.data()));
+            const l = document.getElementById('histList'); 
+            l.innerHTML = '';
+            
+            let reps = []; 
+            snap.forEach(doc => reps.push(doc.data()));
             reps.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+            
             reps.forEach(d => {
-                l.innerHTML += `<div class="list-item"><div><strong>${d.reportType}</strong><br><small>${new Date(d.timestamp?.toDate()).toLocaleDateString()}</small></div>
-                <button class="list-btn btn-view" onclick="viewFile('${d.fileData}')">View</button></div>`;
+                l.innerHTML += `
+                <div class="list-item">
+                    <div>
+                        <strong>${d.reportType}</strong><br>
+                        <small style="color:var(--gray);">${new Date(d.timestamp?.toDate()).toLocaleDateString()}</small>
+                    </div>
+                    <button class="list-btn btn-view" onclick="viewFile('${d.fileData}')"><i class="fas fa-eye"></i> View</button>
+                </div>`;
             });
-            if(snap.empty) l.innerHTML = '<p>No records found.</p>';
+            if(snap.empty) l.innerHTML = '<p style="text-align:center; padding:10px; background:#F9FAFB; border-radius:8px;">No medical records shared.</p>';
         });
     }
 
