@@ -148,14 +148,29 @@
     const modalContent = document.getElementById('modalContent');
 
     // --- INIT PATIENT DATA ---
+    // --- INIT PATIENT DATA ---
     const role = localStorage.getItem('userRole');
-    if(role !== 'patient') { window.location.href = 'index.html'; } // Security Check
+    if(role !== 'patient') { window.location.href = 'index.html'; } 
 
     const name = localStorage.getItem('userName') || 'User';
-    let storedEmail = localStorage.getItem('userEmail');
-    let stableId = storedEmail ? storedEmail.replace(/[.#$[\]]/g, '_') : localStorage.getItem('userUid');
+    const storedEmail = localStorage.getItem('userEmail');
+
+    if (!storedEmail) {
+        console.error("Critical: User email missing from session.");
+        window.location.href = 'index.html'; 
+    }
+
+    // CRITICAL FIX: Patient ID is also their exact email now
+    const stableId = storedEmail;
 
     const currentUserData = { name: name, role: 'patient', uid: stableId, email: storedEmail };
+
+    // SYNC PATIENT: Ensures patient exists in DB with Email ID
+    db.collection('users').doc(stableId).set({
+        name: currentUserData.name,
+        role: 'patient',
+        email: currentUserData.email
+    }, { merge: true });
 
     document.getElementById('sideName').innerText = name;
     document.getElementById('welcomeTitle').innerText = "Hello, " + name;
