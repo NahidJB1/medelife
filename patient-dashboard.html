@@ -269,12 +269,11 @@
                 myApptMap[doc.data().doctorId] = { status: doc.data().status, id: doc.id }; 
             });
             
-            // FIX: Filter by NAME to strictly prevent duplicates
+            // Filter by NAME to prevent duplicates
             const processedNames = new Set();
             
             doctorsSnap.forEach(doc => {
                 const d = doc.data();
-                // If we have already shown a doctor with this NAME, skip this one
                 if (processedNames.has(d.name)) return;
                 processedNames.add(d.name);
 
@@ -296,9 +295,15 @@
                     actionArea = `<button class="list-btn btn-book" onclick="bookApt('${doc.id}','${d.name}')">Book</button>`;
                 }
 
+                // --- FIX: Define avatarImg logic OUTSIDE the template string ---
+                const avatarImg = d.profilePic 
+                    ? `<img src="${d.profilePic}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">` 
+                    : `<div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280;"><i class="fas fa-user-md"></i></div>`;
+
+                // --- FIX: Use ${avatarImg} inside the string ---
                 list.innerHTML += `<div class="list-item">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        const avatarImg = d.profilePic ? `<img src="${d.profilePic}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">` : `<div style="width:35px; height:35px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6B7280;"><i class="fas fa-user-md"></i></div>`;
+                        ${avatarImg}
                         <span style="font-weight:600;">Dr. ${d.name}</span>
                     </div> 
                     ${actionArea}
@@ -356,6 +361,102 @@
                 l.innerHTML += `<div class="list-item"><span>${d.reportType}</span><button class="list-btn btn-view" onclick="viewFile('${d.fileData}')">View</button></div>`;
             });
             if(snap.empty) l.innerHTML = '<p>No reports uploaded.</p>';
+        });
+    }
+
+    function loadCommunityFeed(container) {
+        // 1. Set up the Create Post UI and Feed Container
+        container.innerHTML = `
+            <div class="create-post-card">
+                <div class="cp-input-area">
+                    <textarea id="newPostText" placeholder="Share your health journey or ask a question..."></textarea>
+                </div>
+                <div style="text-align:right; margin-top:10px;">
+                    <button class="list-btn btn-book" onclick="publishPost()">Post</button>
+                </div>
+            </div>
+            <div id="postsFeed">Loading posts...</div>
+        `;
+
+        // 2. Listen to Real-time Updates from Firestore
+        db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snap => {
+            const feed = document.getElementById('postsFeed');
+            // Check if element still exists (user might have switched tabs)
+            if(!feed) return; 
+            
+            feed.innerHTML = '';
+            
+            if(snap.empty) { feed.innerHTML = '<p style="text-align:center; color:gray;">No posts yet. Be the first!</p>'; return; }
+
+            snap.forEach(doc => {
+                const p = doc.data();
+                const isLiked = p.likes && p.likes.includes(currentUserData.uid);
+                
+                // Prepare Comments HTML
+                let commentsHtml = '';
+                if(p.comments && p.comments.length > 0) {
+                    p.comments.forEach(c => {
+                        const roleClass = c.role === 'doctor' ? 'role-doctor' : 'role-patient';
+                        commentsHtml += `
+                        <div style="margin-bottom:8px; font-size:0.9rem; border-bottom:1px solid #eee; padding-bottom:5px;">
+                            <strong>${c.author}</strong> <span class="role-badge ${roleClass}">${c.role}</span>: 
+                            <span style="color:#374151">${c.text}</span>
+                        </div>`;
+                    });
+                }
+
+                // Render Post Card
+                feed.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div>
+                                <strong>${p.authorName}</strong> 
+                                <span class="role-badge ${p.authorRole==='doctor'?'role-doctor':'role-patient'}">${p.authorRole}</span>
+                            </div>
+                            <small style="color:gray">${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'Just now'}</small>
+                        </div>
+                        <div class="post-content" style="margin-bottom:10px; line-height:1.6;">${p.text}</div>
+                        
+                        <div class="interaction-bar">
+                            <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', ${isLiked})">
+                                <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i> ${p.likes ? p.likes.length : 0}
+                            </button>
+                            <button class="action-btn" onclick="document.getElementById('c-sec-${doc.id}').classList.toggle('open')">
+                                <i class="far fa-comment"></i> ${p.comments ? p.comments.length : 0} Comments
+                            </button>
+                        </div>
+
+                        <div class="comments-section" id="c-sec-${doc.id}">
+                            <div class="comment-input-box">
+                                <input type="text" id="i-${doc.id}" placeholder="Write a comment...">
+                                <button class="list-btn btn-view" onclick="sendComment('${doc.id}')">Send</button>
+                            </div>
+                            <div style="max-height:200px; overflow-y:auto;">${commentsHtml}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    function publishPost() {
+        const txt = document.getElementById('newPostText').value;
+        if(!txt.trim()) { showToast("Post cannot be empty"); return; }
+        
+        db.collection('posts').add({
+            text: txt,
+            authorName: currentUserData.name,
+            authorRole: currentUserData.role, // 'patient'
+            authorId: currentUserData.uid,
+            likes: [],
+            comments: [],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            document.getElementById('newPostText').value = '';
+            showToast("Posted successfully!");
+        }).catch(err => {
+            console.error(err);
+            showToast("Error posting.");
         });
     }
 
