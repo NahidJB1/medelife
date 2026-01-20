@@ -420,6 +420,8 @@
         modal.classList.add('active');
     }
 
+    // [REPLACE] The entire performSearch function
+    // [REPLACE] The entire performSearch function
     function performSearch() {
         const email = document.getElementById('sInput').value.trim();
         const div = document.getElementById('searchResults');
@@ -429,10 +431,25 @@
         db.collection('users').where('email', '==', email).get().then(snap => {
             div.innerHTML = '';
             if(snap.empty) { div.innerHTML = '<p style="text-align:center">No patient found.</p>'; return; }
+            
+            // [Fix B] Prevent Duplicates using a Set
+            const seenEmails = new Set();
+            
             snap.forEach(doc => {
                 const d = doc.data();
-                div.innerHTML += `<div class="list-item"><div><strong>${d.name}</strong><br><small>${d.email}</small></div>
-                <button class="list-btn btn-view" onclick="openDoctorPatientView('${doc.id}','${d.name}')">View Profile</button></div>`;
+                // If we have already displayed this email in this search result, skip it
+                if(seenEmails.has(d.email)) return;
+                
+                seenEmails.add(d.email);
+                
+                div.innerHTML += `
+                <div class="list-item">
+                    <div>
+                        <strong>${d.name}</strong>
+                        <br><small>${d.email}</small>
+                    </div>
+                    <button class="list-btn btn-view" onclick="openDoctorPatientView('${doc.id}','${d.name}')">View Profile</button>
+                </div>`;
             });
         });
     }
@@ -443,7 +460,6 @@
     let currentAppointmentId = null;
 
     // [REPLACE] The entire openDoctorPatientView function
-    // [REPLACE] The entire openDoctorPatientView function
     function openDoctorPatientView(pid, pname) {
         currentViewingPatient = { id: pid, name: pname };
         modalContent.innerHTML = `<h2>Loading Patient...</h2>`;
@@ -452,11 +468,11 @@
         Promise.all([
             db.collection('users').doc(currentUserData.uid).get(),
             db.collection('users').doc(pid).get(),
+            // [Fix A] Query ALL appointments (pending OR accepted) to check for permissions
             db.collection('appointments')
                 .where('doctorId', '==', currentUserData.uid)
                 .where('patientId', '==', pid)
-                .where('status', '==', 'accepted') // Only checks confirmed bookings
-                .limit(1).get()
+                .get() 
         ]).then(([docSnap, patSnap, aptSnap]) => {
             
             // 1. Prepare Basic Data
@@ -466,20 +482,32 @@
             // 2. Determine Access State
             let hasAccess = false;
             let accessRequestStatus = null;
-            let currentAppointmentId = null;
-            
-            // Check if a relevant appointment exists
+            let currentAppointmentId = null; // Will hold the ID of the most relevant appointment
+
             if(!aptSnap.empty) {
-                const apt = aptSnap.docs[0].data();
-                currentAppointmentId = aptSnap.docs[0].id;
-                
-                // UNLOCK CONDITION: Booking exists AND Patient allowed sharing
-                if (apt.shareDocuments === true) {
-                    hasAccess = true;
-                }
-                accessRequestStatus = apt.accessRequest || null;
-            } 
-            // Note: If aptSnap is empty (Search Result with no booking), hasAccess remains false.
+                // Loop through all appointments to find if ANY grant access
+                aptSnap.forEach(doc => {
+                    const apt = doc.data();
+                    
+                    // If we haven't picked a main ID yet, pick this one
+                    if (!currentAppointmentId) currentAppointmentId = doc.id;
+                    
+                    // If this specific appointment grants access, Unlock everything
+                    if (apt.shareDocuments === true) {
+                        hasAccess = true;
+                    }
+                    
+                    // Prioritize showing 'pending' request status if it exists
+                    if (apt.accessRequest === 'pending') {
+                        accessRequestStatus = 'pending';
+                    }
+                    
+                    // If we find an accepted booking, prioritize its ID for logic
+                    if (apt.status === 'accepted') {
+                        currentAppointmentId = doc.id;
+                    }
+                });
+            }
 
             // 3. Render Header (Always Visible)
             let html = `
@@ -560,18 +588,17 @@
             } else {
                 // --- LOCKED / ACCESS DENIED VIEW ---
                 
-                // Determine Button Logic
                 let actionArea = '';
                 
                 if (currentAppointmentId) {
-                    // Scenario A: Booking exists, but privacy is ON. Doctor can Request Access.
+                    // Scenario A: Booking exists (Pending or Accepted), but privacy is ON.
                     if(accessRequestStatus === 'pending') {
                          actionArea = `<button class="list-btn" disabled style="background:#F59E0B; color:white;">Request Pending...</button>`;
                     } else {
                          actionArea = `<button class="list-btn btn-book" onclick="requestDocAccess('${currentAppointmentId}')">Request Access</button>`;
                     }
                 } else {
-                    // Scenario B: No Booking (Search Result). Cannot Request Access without a booking object.
+                    // Scenario B: No Booking found.
                     actionArea = `<p style="font-size:0.85rem; color:#EF4444; background:#FEF2F2; padding:8px 15px; border-radius:6px;">
                         <i class="fas fa-info-circle"></i> Confirmed booking required to request access.
                     </p>`;
