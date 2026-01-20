@@ -399,8 +399,8 @@
         const shareDocs = document.querySelector('input[name="docShare"]:checked').value === 'true';
 
         if(!timePref) { showToast("Please enter a preferred time"); return; }
-        if(!confirm(`Confirm booking with Dr. ${docName}?`)) return;
-
+        // [Task C] Removed Confirm Alert - Direct Action
+        
         db.collection('appointments').add({
             patientId: currentUserData.uid, 
             patientName: currentUserData.name,
@@ -408,8 +408,8 @@
             doctorName: docName, 
             status: 'pending', 
             requestDate: new Date().toISOString(),
-            preferredTime: timePref, // Save user preference
-            shareDocuments: shareDocs // Save permission
+            preferredTime: timePref, 
+            shareDocuments: shareDocs 
         }).then(() => { 
             showToast("Request Sent Successfully!"); 
             closeModal(); 
@@ -420,20 +420,19 @@
     }
 
     function cancelPatientRequest(aptId) {
-        if(!confirm("Are you sure you want to cancel this request?")) return;
-        
-        // Delete the appointment document
+        // [Task C] Removed Confirm Alert - Direct Action
         db.collection('appointments').doc(aptId).delete().then(() => {
             showToast("Request Cancelled");
-            openFindDoctorModal(); // Refresh list to show 'Book' button again
+            openFindDoctorModal(); 
         }).catch(error => {
             console.error("Error:", error);
             showToast("Could not cancel.");
         });
     }
-
+    
+    // Also update bookApt if used elsewhere
     function bookApt(docId, docName) {
-        if(!confirm("Book appointment?")) return;
+        // [Task C] Removed Confirm Alert
         db.collection('appointments').add({
             patientId: currentUserData.uid, patientName: currentUserData.name,
             doctorId: docId, doctorName: docName, status: 'pending', requestDate: new Date().toISOString()
