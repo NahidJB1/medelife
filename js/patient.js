@@ -1,4 +1,3 @@
-<script>
 
     // --- INIT PATIENT DATA ---
     const role = localStorage.getItem('userRole');
@@ -470,4 +469,3 @@
         const t = document.getElementById('i-'+pid).value; if(!t) return;
         db.collection('posts').doc(pid).update({ comments: firebase.firestore.FieldValue.arrayUnion({ text: t, author: currentUserData.name, role: 'patient' }) });
     }
-</script>
