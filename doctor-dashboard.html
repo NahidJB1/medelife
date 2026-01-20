@@ -443,6 +443,7 @@
     let currentAppointmentId = null;
 
     // [REPLACE] The entire openDoctorPatientView function
+    // [REPLACE] The entire openDoctorPatientView function
     function openDoctorPatientView(pid, pname) {
         currentViewingPatient = { id: pid, name: pname };
         modalContent.innerHTML = `<h2>Loading Patient...</h2>`;
@@ -454,28 +455,33 @@
             db.collection('appointments')
                 .where('doctorId', '==', currentUserData.uid)
                 .where('patientId', '==', pid)
-                .where('status', '==', 'accepted')
+                .where('status', '==', 'accepted') // Only checks confirmed bookings
                 .limit(1).get()
         ]).then(([docSnap, patSnap, aptSnap]) => {
             
+            // 1. Prepare Basic Data
             const docInfo = docSnap.data() || {};
             const patInfo = patSnap.exists ? patSnap.data() : { name: pname };
             
+            // 2. Determine Access State
             let hasAccess = false;
             let accessRequestStatus = null;
             let currentAppointmentId = null;
             
+            // Check if a relevant appointment exists
             if(!aptSnap.empty) {
                 const apt = aptSnap.docs[0].data();
                 currentAppointmentId = aptSnap.docs[0].id;
-                hasAccess = apt.shareDocuments === true;
+                
+                // UNLOCK CONDITION: Booking exists AND Patient allowed sharing
+                if (apt.shareDocuments === true) {
+                    hasAccess = true;
+                }
                 accessRequestStatus = apt.accessRequest || null;
-            } else {
-                modalContent.innerHTML = `<p style="color:red; text-align:center;">No active appointment found with this patient.</p>`;
-                return;
-            }
+            } 
+            // Note: If aptSnap is empty (Search Result with no booking), hasAccess remains false.
 
-            // --- Header ---
+            // 3. Render Header (Always Visible)
             let html = `
                 <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
                     <img src="${patInfo.profilePic || 'https://via.placeholder.com/60'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
@@ -488,9 +494,10 @@
                     </div>
                 </div>`;
 
-            // --- Body ---
+            // 4. Render Body based on Access
             if (hasAccess) {
-                // Prepare Doctor Details Object (Checking multiple field variations)
+                // --- UNLOCKED VIEW (Write Rx, View Reports) ---
+                
                 const docObjRaw = {
                     name: docInfo.name || currentUserData.name,
                     spec: docInfo.specialist || docInfo.speciality || 'Medical Professional',
@@ -547,24 +554,39 @@
                 `;
                 
                 modalContent.innerHTML = html;
-                
-                // Pass docObjRaw to history loader as fallback
                 loadPatientHistory('Prescription', 'prescHistoryList', docObjRaw);
                 loadPatientHistory('Report', 'reportHistoryList', docObjRaw);
 
             } else {
-                // Access Denied View
+                // --- LOCKED / ACCESS DENIED VIEW ---
+                
+                // Determine Button Logic
+                let actionArea = '';
+                
+                if (currentAppointmentId) {
+                    // Scenario A: Booking exists, but privacy is ON. Doctor can Request Access.
+                    if(accessRequestStatus === 'pending') {
+                         actionArea = `<button class="list-btn" disabled style="background:#F59E0B; color:white;">Request Pending...</button>`;
+                    } else {
+                         actionArea = `<button class="list-btn btn-book" onclick="requestDocAccess('${currentAppointmentId}')">Request Access</button>`;
+                    }
+                } else {
+                    // Scenario B: No Booking (Search Result). Cannot Request Access without a booking object.
+                    actionArea = `<p style="font-size:0.85rem; color:#EF4444; background:#FEF2F2; padding:8px 15px; border-radius:6px;">
+                        <i class="fas fa-info-circle"></i> Confirmed booking required to request access.
+                    </p>`;
+                }
+
                 html += `
                     <div class="access-denied-box">
                         <i class="fas fa-lock" style="font-size:3rem; color:#9CA3AF; margin-bottom:15px;"></i>
-                        <h3>Documents Hidden</h3>
-                        <p style="color:var(--gray); margin-bottom:20px;">The patient has restricted access to their medical records.</p>
+                        <h3>Profile Locked</h3>
+                        <p style="color:var(--gray); margin-bottom:20px;">
+                            ${currentAppointmentId ? 'Patient has restricted document access.' : 'You do not have a confirmed appointment with this patient.'}
+                        </p>
                         
                         <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                            ${accessRequestStatus === 'pending' 
-                                ? `<button class="list-btn" disabled style="background:#F59E0B; color:white;">Request Pending...</button>`
-                                : `<button class="list-btn btn-book" onclick="requestDocAccess('${currentAppointmentId}')">Request Access</button>`
-                            }
+                            ${actionArea}
                         </div>
                     </div>
                 `;
