@@ -536,10 +536,6 @@
                         <p style="color:var(--gray); margin-bottom:20px;">The patient has restricted access to their medical records.</p>
                         
                         <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                            <button class="list-btn btn-time" onclick="openTimePicker('${currentAppointmentId}', '${aptSnap.docs[0].data().scheduledTime || ''}')">
-                                <i class="fas fa-clock"></i> Set Time
-                            </button>
-
                             ${accessRequestStatus === 'pending' 
                                 ? `<button class="list-btn" disabled style="background:#F59E0B; color:white;">Request Pending...</button>`
                                 : `<button class="list-btn btn-book" onclick="requestDocAccess('${currentAppointmentId}')">Request Access</button>`
