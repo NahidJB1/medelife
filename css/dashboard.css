@@ -17,10 +17,55 @@
         .btn-logout:hover { background: #FEE2E2; }
         .action-section { margin-bottom: 2rem; animation: slideUp 1s ease-out backwards; }
         .section-title { font-size: 1.2rem; margin-bottom: 1rem; font-weight: 600; }
-        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .action-card { background: white; padding: 2rem; border-radius: 16px; text-align: center; cursor: pointer; border: 2px dashed #E5E7EB; transition: all 0.3s; }
-        .action-card:hover { border-color: var(--primary); background: #FEF2F2; }
-        .action-card i { font-size: 2rem; color: var(--primary); margin-bottom: 1rem; }
+        /* --- UPDATED RESPONSIVE GRID --- */
+.quick-actions { 
+    display: grid; 
+    /* Changed 200px to 140px so they fit on smaller screens */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+    gap: 1rem; 
+}
+
+.action-card { 
+    background: white; 
+    padding: 1.5rem; /* Slightly reduced padding */
+    border-radius: 16px; 
+    text-align: center; 
+    cursor: pointer; 
+    border: 2px dashed #E5E7EB; 
+    transition: all 0.3s; 
+    /* Ensure content doesn't overflow */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px; 
+}
+
+/* --- ADD THIS NEW MEDIA QUERY FOR MOBILE --- */
+@media (max-width: 480px) {
+    .quick-actions {
+        grid-template-columns: 1fr 1fr; /* Force 2 columns on mobile */
+        gap: 0.8rem;
+    }
+    
+    .action-card {
+        padding: 1rem; /* Compact padding for mobile */
+    }
+
+    .action-card i {
+        font-size: 1.5rem; /* Smaller icon */
+        margin-bottom: 0.5rem;
+    }
+
+    .action-card h4 {
+        font-size: 0.9rem; /* Prevent text wrapping awkwardly */
+    }
+
+    .action-card p {
+        font-size: 0.7rem; /* Smaller description text */
+        display: none; /* Optional: Hide sub-text on very small screens if it looks cluttered */
+    }
+}
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
         .dashboard-modal { background: white; width: 90%; max-width: 600px; border-radius: 16px; padding: 2rem; position: relative; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
