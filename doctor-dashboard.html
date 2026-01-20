@@ -309,7 +309,22 @@
     // --- DOCTOR FUNCTIONS ---
     function openAppointmentList(filterType) {
         const title = filterType === 'pending' ? 'Appointment Requests' : 'Confirmed Bookings';
-        modalContent.innerHTML = `<h2>${title}</h2><div id="aptList">Loading...</div>`;
+        
+        // [Task A] Header with Link to switch views
+        let headerHtml = `<h2 style="margin:0;">${title}</h2>`;
+        if(filterType === 'pending') {
+            headerHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0;">${title}</h2>
+                <span onclick="openAppointmentList('accepted')" style="cursor:pointer; color:var(--secondary); font-size:0.9rem; font-weight:600;">
+                    <i class="fas fa-arrow-right"></i> Go to Bookings
+                </span>
+            </div>`;
+        } else {
+             headerHtml = `<h2 style="margin-bottom:15px;">${title}</h2>`;
+        }
+
+        modalContent.innerHTML = `${headerHtml}<div id="aptList">Loading...</div>`;
         modal.classList.add('active');
 
         db.collection('appointments').where('doctorId', '==', currentUserData.uid).get().then(snap => {
@@ -324,15 +339,15 @@
                 let infoExtra = '';
 
                 if(filterType === 'pending') {
-                    // [Task A] Show Patient's Requested Time
+                    // Show Patient's Requested Time in List
                     const reqTime = data.preferredTime ? `<br><small style="color:#F59E0B; font-weight:600;"><i class="far fa-clock"></i> Requested: ${data.preferredTime}</small>` : '';
                     
                     infoExtra = reqTime;
                     btns = `<button class="list-btn btn-accept" onclick="updateApt('${doc.id}','accepted')">Accept</button>
                             <button class="list-btn btn-decline" onclick="updateApt('${doc.id}','declined')">Decline</button>`;
                 } else {
-                    // Confirmed List
-                    btns = `<button class="list-btn btn-time" title="Set Time" onclick="openTimePicker('${doc.id}', '${data.scheduledTime || ''}')"><i class="fas fa-clock"></i></button>
+                    // [Task B] Pass 'data.preferredTime' to openTimePicker
+                    btns = `<button class="list-btn btn-time" title="Set Time" onclick="openTimePicker('${doc.id}', '${data.scheduledTime || ''}', '${data.preferredTime || ''}')"><i class="fas fa-clock"></i></button>
                             <button class="list-btn btn-book" onclick="openDoctorPatientView('${data.patientId}','${data.patientName}')">Profile</button>
                             <button class="list-btn btn-cancel" onclick="cancelAppointment('${doc.id}')">Cancel</button>`;
                 }
@@ -357,10 +372,20 @@
     }
 
     // [Task C] Replaced prompt with a UI Modal
-    function openTimePicker(docId, currentVal) {
+    // [Task B] Updated to show Requested Time
+    function openTimePicker(docId, currentVal, reqTime) {
+        let reqDisplay = '';
+        if(reqTime && reqTime !== 'undefined' && reqTime !== '') {
+            reqDisplay = `
+            <div style="background:#FFFBEB; border:1px solid #FCD34D; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9rem; color:#92400E;">
+                <i class="far fa-clock"></i> <strong>Patient Requested:</strong> ${reqTime}
+            </div>`;
+        }
+
         modalContent.innerHTML = `
             <h3>Set Appointment Time</h3>
-            <p style="color:var(--gray); margin-bottom:15px; font-size:0.9rem;">Enter the confirmed time for this visit.</p>
+            <p style="color:var(--gray); margin-bottom:15px; font-size:0.9rem;">Confirm the time for this visit.</p>
+            ${reqDisplay}
             <input type="text" id="newTimeInput" value="${currentVal && currentVal !== 'undefined' ? currentVal : ''}" class="rx-input" style="min-height:auto; margin-bottom:20px;" placeholder="e.g. 10:30 AM">
             <button class="list-btn btn-book" style="width:100%; padding:12px;" onclick="saveTime('${docId}')">Save Time</button>
         `;
