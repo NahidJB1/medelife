@@ -1,4 +1,3 @@
-<script>
     
     // --- INIT DOCTOR DATA ---
     const role = localStorage.getItem('userRole');
@@ -718,4 +717,3 @@
 function closeDocViewer() {
     document.getElementById('documentViewerModal').classList.remove('active');
 }
-    </script>
