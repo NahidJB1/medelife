@@ -1,4 +1,3 @@
-<script>
   const role = localStorage.getItem('userRole');
     if(role !== 'pharmacy') { window.location.href = 'index.html'; } // Security Check
 
@@ -179,10 +178,4 @@ function closeDocViewer() {
         win.document.write(`<iframe src="${data}" style="width:100%;height:100%;border:none;"></iframe>`); 
     }
 
-    // --- SHARED UTILS ---
-    function closeModal() { modal.classList.remove('active'); }
-    function showToast(msg) { const b = document.getElementById('toast-box'); document.getElementById('toast-msg').innerText = msg; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
-    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
-
-</script>
     
